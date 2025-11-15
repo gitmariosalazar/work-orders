@@ -1,8 +1,10 @@
 import { Module } from "@nestjs/common";
-import { PostgresqlWorkOrderTypeModule } from "../../modules/order-type/infrastructure/modules/postgresql/postgresql.work-order-type.module";
+import { PostgreSQLWorkOrderModule } from "../../modules/work-order/infrastructure/modules/postgresql/postgresql.work-order.module";
+import { PostgreSQLWorkOrderTypeModule } from "../../modules/order-type/infrastructure/modules/postgresql/postgresql.work-order-type.module";
 @Module({
   imports: [
-    PostgresqlWorkOrderTypeModule
+    PostgreSQLWorkOrderTypeModule,
+    PostgreSQLWorkOrderModule,
   ],
   controllers: [],
   providers: [],

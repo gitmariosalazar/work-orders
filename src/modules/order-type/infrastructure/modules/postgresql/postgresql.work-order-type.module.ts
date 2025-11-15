@@ -36,4 +36,4 @@ import { PostgreSQLWorkOrderTypePersistence } from "../../repositories/postgresq
     }
   ],
 })
-export class PostgresqlWorkOrderTypeModule { }
+export class PostgreSQLWorkOrderTypeModule { }
