@@ -9,6 +9,8 @@ export class WorkOrderObservationAdapter {
       workOrderObservationId: result.workOrderObservationId,
       workOrderId: result.workOrderId,
       observationId: result.observationId,
+      observationTitle: result.observationTitle,
+      observationDetails: result.observationDetails,
       registerDate: result.registerDate,
     };
   }

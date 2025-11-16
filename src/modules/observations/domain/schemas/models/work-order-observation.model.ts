@@ -1,9 +1,11 @@
+import { ObservationModel } from "./observation.model";
+
 export class WorkOrderObservationModel {
   constructor(
     private readonly props: {
       workOrderObservationId?: number;
       workOrderId: number;
-      observationId: number;
+      observation: ObservationModel;
       registerDate?: Date;
     }
   ) {
@@ -17,8 +19,8 @@ export class WorkOrderObservationModel {
     return this.props.workOrderId;
   }
 
-  get observationId(): number {
-    return this.props.observationId;
+  get observation(): ObservationModel {
+    return this.props.observation;
   }
 
   get registerDate(): Date | undefined {
@@ -29,8 +31,8 @@ export class WorkOrderObservationModel {
     this.props.workOrderId = id;
   }
 
-  set observationId(id: number) {
-    this.props.observationId = id;
+  set observation(observation: ObservationModel) {
+    this.props.observation = observation;
   }
 
   set registerDate(date: Date | undefined) {
@@ -39,14 +41,18 @@ export class WorkOrderObservationModel {
 
   static create(
     workOrderId: number,
-    observationId: number,
+    observation: ObservationModel,
     workOrderObservationId?: number,
     registerDate?: Date
   ): WorkOrderObservationModel {
     return new WorkOrderObservationModel({
       workOrderObservationId,
       workOrderId,
-      observationId,
+      observation: ObservationModel.create(
+        observation.observationId,
+        observation.observationTitle,
+        observation.observationDetails,
+      ),
       registerDate,
     });
   }
@@ -55,7 +61,7 @@ export class WorkOrderObservationModel {
     return {
       workOrderObservationId: this.workOrderObservationId,
       workOrderId: this.workOrderId,
-      observationId: this.observationId,
+      observation: this.observation.toJSON(),
       registerDate: this.registerDate,
     };
   }

@@ -18,17 +18,17 @@ export class PostgresqlWorkOrderHistoryPersistence
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
       const query: string = `
-      INSERT INTO histrorialordentrabajo
+      INSERT INTO historialordentrabajo
       (
         ordenTrabajoId,
         fechaCambio,
         estadoAnteriorId,
         estadoNuevoId,
         usuarioId,
-        descripcionCambio,
+        descripcionCambio
       )
       VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING histrorialordentrabajoId AS "workOrderHistoryId",
+      RETURNING historialId AS "workOrderHistoryId",
                 ordenTrabajoId AS "workOrderId",
                 fechaCambio AS "changeDate",
                 estadoAnteriorId AS "previousStatusId",
@@ -76,7 +76,7 @@ export class PostgresqlWorkOrderHistoryPersistence
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
       const query: string = `
-      UPDATE histrorialordentrabajo
+      UPDATE historialordentrabajo
       SET
         ordenTrabajoId = COALESCE($1, ordenTrabajoId),
         fechaCambio = COALESCE($2, fechaCambio),
@@ -84,8 +84,8 @@ export class PostgresqlWorkOrderHistoryPersistence
         estadoNuevoId = COALESCE($4, estadoNuevoId),
         usuarioId = COALESCE($5, usuarioId),
         descripcionCambio = COALESCE($6, descripcionCambio)
-      WHERE histrorialordentrabajoId = $7
-      RETURNING histrorialordentrabajoId AS "workOrderHistoryId",
+      WHERE historialId = $7
+      RETURNING historialId AS "workOrderHistoryId",
                 ordenTrabajoId AS "workOrderId",
                 fechaCambio AS "changeDate",
                 estadoAnteriorId AS "previousStatusId",
@@ -134,15 +134,15 @@ export class PostgresqlWorkOrderHistoryPersistence
     try {
       const query: string = `
       SELECT
-        histrorialordentrabajoId AS "workOrderHistoryId",
+        historialId AS "workOrderHistoryId",
         ordenTrabajoId AS "workOrderId",
         fechaCambio AS "changeDate",
         estadoAnteriorId AS "previousStatusId",
         estadoNuevoId AS "newStatusId",
         usuarioId AS "userId",
         descripcionCambio AS "changeDescription"
-      FROM histrorialordentrabajo
-      WHERE histrorialordentrabajoId = $1;
+      FROM historialordentrabajo
+      WHERE historialId = $1;
       `;
 
       const params = [workOrderHistoryId];
@@ -174,14 +174,14 @@ export class PostgresqlWorkOrderHistoryPersistence
     try {
       const query: string = `
       SELECT
-        histrorialordentrabajoId AS "workOrderHistoryId",
+        historialId AS "workOrderHistoryId",
         ordenTrabajoId AS "workOrderId",
         fechaCambio AS "changeDate",
         estadoAnteriorId AS "previousStatusId",
         estadoNuevoId AS "newStatusId",
         usuarioId AS "userId",
         descripcionCambio AS "changeDescription"
-      FROM histrorialordentrabajo
+      FROM historialordentrabajo
       WHERE ordenTrabajoId = $1;
       `;
 
@@ -211,14 +211,14 @@ export class PostgresqlWorkOrderHistoryPersistence
     try {
       const query: string = `
       SELECT
-        histrorialordentrabajoId AS "workOrderHistoryId",
+        historialId AS "workOrderHistoryId",
         ordenTrabajoId AS "workOrderId",
         fechaCambio AS "changeDate",
         estadoAnteriorId AS "previousStatusId",
         estadoNuevoId AS "newStatusId",
         usuarioId AS "userId",
         descripcionCambio AS "changeDescription"
-      FROM histrorialordentrabajo;
+      FROM historialordentrabajo;
       `;
 
       const result =

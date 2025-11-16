@@ -22,7 +22,7 @@ export class WorkOrderObservationService
     workOrderObservation: CreateWorkOrderObservationRequest,
   ): Promise<WorkOrderObservationResponse | null> {
     try {
-      const requiredFields: string[] = ['workOrderId', 'observationId'];
+      const requiredFields: string[] = ['workOrderId', 'observationDetails'];
 
       const missingFieldMessages: string[] = validateFields(
         workOrderObservation,
@@ -39,6 +39,8 @@ export class WorkOrderObservationService
         WorkOrderObservationMapper.fromCreateWorkOrderObservationRequestToWorkOrderObservationModel(
           workOrderObservation,
         );
+
+      workOrderObservationModel.observation.observationTitle = 'Observation for Work Order ' + workOrderObservationModel.workOrderId;
 
       const createdWorkOrderObservation: WorkOrderObservationResponse | null =
         await this.workOrderObservationRepository.create(
@@ -73,7 +75,7 @@ export class WorkOrderObservationService
         });
       }
 
-      const requiredFields: string[] = ['workOrderId', 'observationId'];
+      const requiredFields: string[] = ['workOrderId', 'observationDetails'];
 
       const missingFieldMessages: string[] = validateFields(
         workOrderObservation,
@@ -90,6 +92,10 @@ export class WorkOrderObservationService
         WorkOrderObservationMapper.fromUpdateWorkOrderObservationRequestToWorkOrderObservationModel(
           workOrderObservation,
         );
+
+      if (workOrderObservationModelProps.observation) {
+        workOrderObservationModelProps.observation.observationTitle = 'Observation for Work Order ' + workOrderObservationModelProps.workOrderId;
+      }
 
       const updatedWorkOrderObservation: WorkOrderObservationResponse | null =
         await this.workOrderObservationRepository.update(

@@ -1,12 +1,15 @@
 export class CreateWorkOrderObservationRequest {
   workOrderId: number;
-  observationId: number;
+  observationTitle: string;
+  observationDetails: string;
 
   constructor(
     workOrderId: number,
-    observationId: number,
+    observationTitle: string,
+    observationDetails: string,
   ) {
     this.workOrderId = workOrderId;
-    this.observationId = observationId;
+    this.observationTitle = observationTitle;
+    this.observationDetails = observationDetails;
   }
 }

@@ -1,6 +1,7 @@
 import { CreateWorkOrderObservationRequest } from '../../domain/schemas/dto/request/create.work-order-observation.request';
 import { UpdateWorkOrderObservationRequest } from '../../domain/schemas/dto/request/update.work-order-observation.request';
 import { WorkOrderObservationResponse } from '../../domain/schemas/dto/response/work-order-observation.response';
+import { ObservationModel } from '../../domain/schemas/models/observation.model';
 import { WorkOrderObservationModel } from '../../domain/schemas/models/work-order-observation.model';
 
 export class WorkOrderObservationMapper {
@@ -10,7 +11,9 @@ export class WorkOrderObservationMapper {
     return {
       workOrderObservationId: model.workOrderObservationId,
       workOrderId: model.workOrderId,
-      observationId: model.observationId,
+      observationId: model.observation.observationId,
+      observationTitle: model.observation.observationTitle,
+      observationDetails: model.observation.observationDetails,
       registerDate: model.registerDate,
     };
   }
@@ -20,7 +23,12 @@ export class WorkOrderObservationMapper {
   ): WorkOrderObservationModel {
     return WorkOrderObservationModel.create(
       response.workOrderId,
-      response.observationId,
+      new ObservationModel({
+        observationId: response.observationId,
+        observationTitle: response.observationTitle,
+        observationDetails: response.observationDetails,
+      }
+      ),
       response.workOrderObservationId,
       response.registerDate,
     );
@@ -31,7 +39,11 @@ export class WorkOrderObservationMapper {
   ): WorkOrderObservationModel {
     return WorkOrderObservationModel.create(
       request.workOrderId,
-      request.observationId,
+      new ObservationModel({
+        observationId: 0,
+        observationTitle: request.observationTitle,
+        observationDetails: request.observationDetails,
+      })
     );
   }
 
@@ -44,8 +56,17 @@ export class WorkOrderObservationMapper {
     if (request.workOrderId !== undefined) {
       workOrderObservationModelProps.workOrderId = request.workOrderId;
     }
-    if (request.observationId !== undefined) {
-      workOrderObservationModelProps.observationId = request.observationId;
+    if (request.observationTitle !== undefined) {
+      if (!workOrderObservationModelProps.observation) {
+        workOrderObservationModelProps.observation = new ObservationModel({
+          observationId: 0,
+          observationTitle: request.observationTitle,
+          observationDetails: request.observationDetails || '',
+        });
+      } else {
+        workOrderObservationModelProps.observation.observationTitle = request.observationTitle;
+        workOrderObservationModelProps.observation.observationDetails = request.observationDetails || '';
+      }
     }
 
     return workOrderObservationModelProps;
