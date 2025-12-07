@@ -1,30 +1,12 @@
-import { Module } from "@nestjs/common";
-import { ClientsModule, Transport } from "@nestjs/microservices";
-import { environments } from "../../../../../settings/environments/environments";
-import { WorkOrderHistoryController } from "../../controllers/work-order-history.controller";
-import { DatabaseServicePostgreSQL } from "../../../../../shared/connections/database/postgresql/postgresql.service";
-import { PostgresqlWorkOrderHistoryPersistence } from "../../repositories/postgresql/persistence/postgresql.work-order-history.persistence";
-import { WorkOrderHistoryService } from "../../../application/services/work-order-history.service";
+import { Module } from '@nestjs/common';
+import { WorkOrderHistoryController } from '../../controllers/work-order-history.controller';
+import { DatabaseServicePostgreSQL } from '../../../../../shared/connections/database/postgresql/postgresql.service';
+import { PostgresqlWorkOrderHistoryPersistence } from '../../repositories/postgresql/persistence/postgresql.work-order-history.persistence';
+import { WorkOrderHistoryService } from '../../../application/services/work-order-history.service';
+import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.module';
 
 @Module({
-  imports: [
-    ClientsModule.register([
-      {
-        name: environments.WORK_HISTORY_KAFKA_CLIENT,
-        transport: Transport.KAFKA,
-        options: {
-          client: {
-            clientId: environments.WORK_HISTORY_KAFKA_CLIENT_ID,
-            brokers: [environments.KAFKA_BROKER_URL],
-          },
-          consumer: {
-            groupId: environments.WORK_HISTORY_KAFKA_GROUP_ID,
-            allowAutoTopicCreation: true,
-          },
-        }
-      }
-    ])
-  ],
+  imports: [KafkaServiceModule],
   controllers: [WorkOrderHistoryController],
   providers: [
     DatabaseServicePostgreSQL,
@@ -36,4 +18,4 @@ import { WorkOrderHistoryService } from "../../../application/services/work-orde
   ],
   exports: [],
 })
-export class PostgresqlWorkOrderHistoryModule { }
+export class PostgresqlWorkOrderHistoryModule {}
