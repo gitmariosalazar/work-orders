@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Pool, PoolConfig, QueryResult } from 'pg';
 import { DatabaseAbstract } from '../abstract/abstract.database';
 import { RpcException } from '@nestjs/microservices';
@@ -5,7 +10,10 @@ import { environments } from '../../../../settings/environments/environments';
 import { statusCode } from '../../../../settings/environments/status-code';
 
 class DatabaseError extends Error {
-  constructor(message: string, public readonly code?: string) {
+  constructor(
+    message: string,
+    public readonly code?: string,
+  ) {
     super(message);
     this.name = 'DatabaseError';
   }
@@ -22,7 +30,13 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
   public constructor() {
     super();
     this.validateConfig();
-    console.log(environments.DATABASE_HOST, environments.DATABASE_NAME, environments.DATABASE_PASSWORD, environments.DATABASE_PORT, environments.DATABASE_USER)
+    console.log(
+      environments.DATABASE_HOST,
+      environments.DATABASE_NAME,
+      environments.DATABASE_PASSWORD,
+      environments.DATABASE_PORT,
+      environments.DATABASE_USER,
+    );
     const poolConfig: PoolConfig = {
       user: environments.DATABASE_USER,
       host: environments.DATABASE_HOST,
@@ -32,6 +46,7 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
       max: 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
+      parseInt8: true,
     };
 
     this.pool = new Pool(poolConfig);
@@ -54,7 +69,7 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
       databaseHostname: environments.DATABASE_HOST,
       databasePassword: environments.DATABASE_PASSWORD,
       databaseName: environments.DATABASE_NAME,
-      databasePort: environments.DATABASE_PORT
+      databasePort: environments.DATABASE_PORT,
     };
 
     for (const [key, value] of Object.entries(requiredConfigs)) {
@@ -98,12 +113,16 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
           });
         }
 
-        await new Promise(resolve => setTimeout(resolve, this.retryDelayMs * Math.pow(2, attempt)));
+        await new Promise((resolve) =>
+          setTimeout(resolve, this.retryDelayMs * Math.pow(2, attempt)),
+        );
       }
     }
   }
 
-  public async transaction<T>(operations: (client: Pool) => Promise<T>): Promise<T> {
+  public async transaction<T>(
+    operations: (client: Pool) => Promise<T>,
+  ): Promise<T> {
     if (!this.isConnected) {
       throw new RpcException({
         statusCode: statusCode.INTERNAL_SERVER_ERROR,
@@ -116,8 +135,7 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
       const result = await operations(client);
       await client.query('COMMIT');
       return result;
-    }
-    catch (error) {
+    } catch (error) {
       await client.query('ROLLBACK');
       const errorMessage = `Transaction failed: ${error.message}`;
       console.error(errorMessage);
@@ -125,8 +143,7 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
         statusCode: statusCode.INTERNAL_SERVER_ERROR,
         message: errorMessage,
       });
-    }
-    finally {
+    } finally {
       client.release();
     }
   }
@@ -140,15 +157,21 @@ export class DatabaseServicePostgreSQL extends DatabaseAbstract {
     }
 
     try {
-      const result: QueryResult<T> = await Promise.race([
+      const result: QueryResult<T> = (await Promise.race([
         this.pool.query<T>(sql, params),
         new Promise((_, reject) =>
-          setTimeout(() => reject(new RpcException({
-            statusCode: statusCode.INTERNAL_SERVER_ERROR,
-            message: 'Query timeout',
-          })), this.queryTimeoutMs)
-        )
-      ]) as QueryResult<T>;
+          setTimeout(
+            () =>
+              reject(
+                new RpcException({
+                  statusCode: statusCode.INTERNAL_SERVER_ERROR,
+                  message: 'Query timeout',
+                }),
+              ),
+            this.queryTimeoutMs,
+          ),
+        ),
+      ])) as QueryResult<T>;
 
       console.log(`Query executed successfully: ${sql.slice(0, 50)}...`);
       return result.rows;

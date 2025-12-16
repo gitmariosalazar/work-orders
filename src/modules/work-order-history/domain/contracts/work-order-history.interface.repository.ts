@@ -1,5 +1,6 @@
-import { WorkOrderHistoryResponse } from "../schemas/dto/response/work-order-history.response";
-import { WorkOrderHistoryModel } from "../schemas/models/work-order-history.model";
+import { ViewWorkOrderHistoryResponse } from '../schemas/dto/response/view-work-order-history.response';
+import { WorkOrderHistoryResponse } from '../schemas/dto/response/work-order-history.response';
+import { WorkOrderHistoryModel } from '../schemas/models/work-order-history.model';
 
 export interface InterfaceWorkOrderHistoryRepository {
   create(
@@ -16,8 +17,21 @@ export interface InterfaceWorkOrderHistoryRepository {
   ): Promise<WorkOrderHistoryResponse | null>;
 
   findByWorkOrderId(
-    workOrderId: number,
+    workOrderId: string,
   ): Promise<WorkOrderHistoryResponse[] | null>;
 
   findAll(): Promise<WorkOrderHistoryResponse[] | null>;
+
+  findAllViewHistoriesWorkOrders(pagination?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ViewWorkOrderHistoryResponse[]>;
+
+  findAllViewHistoriesWorkOrdersByOrderCode(
+    orderCode: string,
+    pagination?: {
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ViewWorkOrderHistoryResponse[]>;
 }

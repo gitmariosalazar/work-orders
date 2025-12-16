@@ -14,7 +14,7 @@ export interface InterfaceWorkOrderObservationUseCase {
     workOrderObservationId: number,
   ): Promise<WorkOrderObservationResponse | null>;
   getWorkOrderObservationsByWorkOrderId(
-    workOrderId: number,
+    workOrderId: string,
   ): Promise<WorkOrderObservationResponse[]>;
   getAllWorkOrderObservations(): Promise<WorkOrderObservationResponse[]>;
 }

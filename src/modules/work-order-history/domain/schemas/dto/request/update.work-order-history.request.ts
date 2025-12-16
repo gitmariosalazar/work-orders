@@ -1,24 +1,24 @@
 export class UpdateWorkOrderHistoryRequest {
-  workOrderId?: number;
+  userId: number;
+  statusId?: number;
   changeDate?: Date;
-  previousStatusId?: number;
-  newStatusId?: number;
-  userId?: number;
   changeDescription?: string;
+  cadastralKey?: string;
+  orderCode?: string;
 
   constructor(
-    workOrderId?: number,
+    userId: number,
+    statusId?: number,
     changeDate?: Date,
-    userId?: number,
-    previousStatusId?: number,
-    newStatusId?: number,
     changeDescription?: string,
+    cadastralKey?: string,
+    orderCode?: string,
   ) {
-    if (workOrderId) this.workOrderId = workOrderId;
-    if (changeDate) this.changeDate = changeDate;
-    if (userId) this.userId = userId;
-    if (previousStatusId) this.previousStatusId = previousStatusId;
-    if (newStatusId) this.newStatusId = newStatusId;
-    if (changeDescription) this.changeDescription = changeDescription;
+    this.statusId = statusId;
+    this.changeDate = changeDate || new Date();
+    this.userId = userId;
+    this.changeDescription = changeDescription;
+    this.cadastralKey = cadastralKey;
+    this.orderCode = orderCode;
   }
 }

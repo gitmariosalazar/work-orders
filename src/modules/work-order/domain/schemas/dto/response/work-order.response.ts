@@ -1,19 +1,20 @@
 export interface WorkOrderResponse {
   workOrderId: number;
-  description: string;
-  creationDate?: Date;
-  asignationDate?: Date;
-  startDate?: Date;
-  completionDate?: Date;
-  cancelationDate?: Date;
-  workOrderTypeId: number;
+  orderCode: string;
+  workTypeId: number;
   priorityId: number;
-  workOrderStatusId: number;
-  connectionId: string;
   clientId?: string;
-  createdUserId: string;
-  assignedUserId?: string;
-  estimateCost?: number;
-  realCost?: number;
-  observations?: string;
+  creationDate?: Date;
+  assignationDate?: Date;
+  completionDate?: Date;
+  status?: number;
+  description: string;
+  location: string;
+  createdUserId: number;
+  assignedUserId?: number;
+  completedUserId?: number;
+  coordinates?: string;
+  metadata?: string;
+  cadastralKey?: string;
+  isDeleted?: boolean;
 }

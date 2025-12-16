@@ -1,55 +1,81 @@
 export class UpdateWorkOrderRequest {
-  workOrderId?: number;
-  description: string;
-  creationDate?: Date;
-  asignationDate?: Date;
-  startDate?: Date;
-  completionDate?: Date;
-  cancelationDate?: Date;
-  workOrderTypeId: number;
+  workOrderId: number;
+  orderCode: string;
+  workTypeId: number;
   priorityId: number;
-  workOrderStatusId: number;
-  connectionId: string;
   clientId?: string;
-  createdUserId: string;
-  assignedUserId?: string;
-  estimateCost?: number;
-  realCost?: number;
-  observations?: string;
+  creationDate?: Date;
+  assignationDate?: Date;
+  completionDate?: Date;
+  status?: number;
+  description: string;
+  location: string;
+  createdUserId: number;
+  assignedUserId?: number;
+  completedUserId?: number;
+  coordinates?: string;
+  metadata?: string;
+  cadastralKey?: string;
+  isDeleted?: boolean;
   constructor(
-    description: string,
-    workOrderTypeId: number,
+    workOrderId: number,
+    orderCode: string,
+    workTypeId: number,
     priorityId: number,
-    workOrderStatusId: number,
-    connectionId: string,
-    createdUserId: string,
-    creationDate?: Date,
-    asignationDate?: Date,
-    startDate?: Date,
-    completionDate?: Date,
-    cancelationDate?: Date,
+    description: string,
+    location: string,
+    createdUserId: number,
     clientId?: string,
-    assignedUserId?: string,
-    estimateCost?: number,
-    realCost?: number,
-    observations?: string,
+    creationDate?: Date,
+    assignationDate?: Date,
+    completionDate?: Date,
+    status?: number,
+    assignedUserId?: number,
+    completedUserId?: number,
+    coordinates?: string,
+    metadata?: string,
+    cadastralKey?: string,
+    isDeleted?: boolean,
   ) {
-    this.description = description;
-    this.workOrderTypeId = workOrderTypeId;
+    this.workOrderId = workOrderId;
+    this.orderCode = orderCode;
+    this.workTypeId = workTypeId;
     this.priorityId = priorityId;
-    this.workOrderStatusId = workOrderStatusId;
-    this.connectionId = connectionId;
+    this.description = description;
+    this.location = location;
     this.createdUserId = createdUserId;
-    if (creationDate) this.creationDate = creationDate;
-    if (asignationDate) this.asignationDate = asignationDate;
-    if (startDate) this.startDate
-    this.startDate = startDate;;
-    if (completionDate) this.completionDate = completionDate;
-    if (cancelationDate) this.cancelationDate = cancelationDate;
-    if (clientId) this.clientId = clientId;
-    if (assignedUserId) this.assignedUserId = assignedUserId;
-    if (estimateCost) this.estimateCost = estimateCost;
-    if (realCost) this.realCost = realCost;
-    if (observations) this.observations = observations;
+    if (clientId !== undefined) {
+      this.clientId = clientId;
+    }
+    if (creationDate !== undefined) {
+      this.creationDate = creationDate;
+    }
+    if (assignationDate !== undefined) {
+      this.assignationDate = assignationDate;
+    }
+    if (completionDate !== undefined) {
+      this.completionDate = completionDate;
+    }
+    if (status !== undefined) {
+      this.status = status;
+    }
+    if (assignedUserId !== undefined) {
+      this.assignedUserId = assignedUserId;
+    }
+    if (completedUserId !== undefined) {
+      this.completedUserId = completedUserId;
+    }
+    if (coordinates !== undefined) {
+      this.coordinates = coordinates;
+    }
+    if (metadata !== undefined) {
+      this.metadata = metadata;
+    }
+    if (cadastralKey !== undefined) {
+      this.cadastralKey = cadastralKey;
+    }
+    if (isDeleted !== undefined) {
+      this.isDeleted = isDeleted;
+    }
   }
 }

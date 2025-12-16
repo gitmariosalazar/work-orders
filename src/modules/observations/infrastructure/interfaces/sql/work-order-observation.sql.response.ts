@@ -1,14 +1,9 @@
-export interface WorkOrderObservationSQLResponse {
-  workOrderObservationId?: number;
-  workOrderId: number;
-  observationId: number;
-  observationTitle: string;
-  observationDetails: string;
-  registerDate?: Date;
-}
+import { UUID } from 'crypto';
 
-export interface ObservationSQLResult {
-  observationId: number
-  observationTitle: string;
-  observationDetails: string;
+export interface WorkOrderObservationSQLResponse {
+  observation_id: number;
+  work_order_id: UUID;
+  description: string;
+  worker_id: number;
+  created_at?: Date;
 }

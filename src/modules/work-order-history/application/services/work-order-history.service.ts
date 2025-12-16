@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-catch */
 import { Inject, Injectable } from '@nestjs/common';
 import { InterfaceWorkOrderHistoryUseCase } from '../usecases/work-order-history.use-case.interface';
 import { InterfaceWorkOrderHistoryRepository } from '../../domain/contracts/work-order-history.interface.repository';
@@ -9,20 +10,29 @@ import { statusCode } from '../../../../settings/environments/status-code';
 import { WorkOrderHistoryModel } from '../../domain/schemas/models/work-order-history.model';
 import { WorkOrderHistoryMapper } from '../mappers/work-order-history.mapper';
 import { UpdateWorkOrderHistoryRequest } from '../../domain/schemas/dto/request/update.work-order-history.request';
+import { ViewWorkOrderHistoryResponse } from '../../domain/schemas/dto/response/view-work-order-history.response';
 
 @Injectable()
 export class WorkOrderHistoryService
-  implements InterfaceWorkOrderHistoryUseCase {
+  implements InterfaceWorkOrderHistoryUseCase
+{
   constructor(
     @Inject('WorkOrderHistoryRepository')
     private readonly workOrderHistoryRepository: InterfaceWorkOrderHistoryRepository,
-  ) { }
+  ) {}
 
   async createWorkOrderHistory(
     createWorkOrderHistoryRequest: CreateWorkHistoryRequest,
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
-      const requiredFields: string[] = ['workOrderId', 'changeDate', 'userId'];
+      const requiredFields: string[] = [
+        'workOrderId',
+        'statusId',
+        'userId',
+        'changeDescription',
+        'cadastralKey',
+        'orderCode',
+      ];
 
       const missingFieldMessages: string[] = validateFields(
         createWorkOrderHistoryRequest,
@@ -78,9 +88,10 @@ export class WorkOrderHistoryService
       }
 
       const requiredFields: string[] = [
-        'previousStatusId',
-        'newStatusId',
         'userId',
+        'changeDescription',
+        'cadastralKey',
+        'orderCode',
       ];
 
       const missingFieldMessages: string[] = validateFields(
@@ -147,10 +158,10 @@ export class WorkOrderHistoryService
   }
 
   async getWorkOrderHistoriesByWorkOrderId(
-    workOrderId: number,
+    workOrderId: string,
   ): Promise<WorkOrderHistoryResponse[] | null> {
     try {
-      if (!workOrderId || workOrderId <= 0) {
+      if (!workOrderId || workOrderId.trim() === '') {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'Invalid work order ID.',
@@ -182,6 +193,56 @@ export class WorkOrderHistoryService
         throw new RpcException({
           statusCode: statusCode.NOT_FOUND,
           message: 'No work order histories found.',
+        });
+      }
+
+      return workOrderHistories;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findAllViewHistoriesWorkOrders(pagination?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ViewWorkOrderHistoryResponse[]> {
+    try {
+      const workOrderHistories =
+        await this.workOrderHistoryRepository.findAllViewHistoriesWorkOrders(
+          pagination,
+        );
+
+      if (!workOrderHistories || workOrderHistories.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order histories found.',
+        });
+      }
+
+      return workOrderHistories;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findAllViewHistoriesWorkOrdersByOrderCode(
+    orderCode: string,
+    pagination?: {
+      limit?: number;
+      offset?: number;
+    },
+  ): Promise<ViewWorkOrderHistoryResponse[]> {
+    try {
+      const workOrderHistories =
+        await this.workOrderHistoryRepository.findAllViewHistoriesWorkOrdersByOrderCode(
+          orderCode,
+          pagination,
+        );
+
+      if (!workOrderHistories || workOrderHistories.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order histories found for the given order code.',
         });
       }
 

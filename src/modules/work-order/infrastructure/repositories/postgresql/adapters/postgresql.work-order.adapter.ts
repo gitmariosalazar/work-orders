@@ -1,28 +1,29 @@
-import { WorkOrderResponse } from "../../../../domain/schemas/dto/response/work-order.response";
-import { WorkOrderSQLResponse } from "../../../interfaces/sql/work-order.sql.response";
+import { WorkOrderResponse } from '../../../../domain/schemas/dto/response/work-order.response';
+import { WorkOrderSQLResponse } from '../../../interfaces/sql/work-order.sql.response';
 
 export class WorkOrderAdapter {
   static fromWorkOrderSQLResponseToWorkOrderResponse(
     workOrderSQLResponse: WorkOrderSQLResponse,
   ): WorkOrderResponse {
     return {
-      workOrderId: workOrderSQLResponse.workOrderId!,
-      description: workOrderSQLResponse.description,
-      creationDate: workOrderSQLResponse.creationDate,
-      asignationDate: workOrderSQLResponse.asignationDate,
-      startDate: workOrderSQLResponse.startDate,
-      completionDate: workOrderSQLResponse.completionDate,
-      cancelationDate: workOrderSQLResponse.cancelationDate,
-      workOrderTypeId: workOrderSQLResponse.workOrderTypeId,
-      priorityId: workOrderSQLResponse.priorityId,
-      workOrderStatusId: workOrderSQLResponse.workOrderStatusId,
-      connectionId: workOrderSQLResponse.connectionId,
-      clientId: workOrderSQLResponse.clientId,
-      createdUserId: workOrderSQLResponse.createdUserId,
-      assignedUserId: workOrderSQLResponse.assignedUserId,
-      estimateCost: workOrderSQLResponse.estimateCost,
-      realCost: workOrderSQLResponse.realCost,
-      observations: workOrderSQLResponse.observations,
+      workOrderId: workOrderSQLResponse.work_order_id,
+      orderCode: workOrderSQLResponse.order_code,
+      workTypeId: workOrderSQLResponse.work_type_id,
+      priorityId: workOrderSQLResponse.priority_id,
+      clientId: workOrderSQLResponse.client_id,
+      location: workOrderSQLResponse.location || '',
+      description: workOrderSQLResponse.description || '',
+      createdUserId: workOrderSQLResponse.created_user_id || 0,
+      assignedUserId: workOrderSQLResponse.assigned_user_id || 0,
+      completedUserId: workOrderSQLResponse.completed_user_id || 0,
+      coordinates: workOrderSQLResponse.coordinates,
+      metadata: workOrderSQLResponse.metadata,
+      cadastralKey: workOrderSQLResponse.cadastral_key,
+      isDeleted: workOrderSQLResponse.is_deleted,
+      creationDate: workOrderSQLResponse.creation_date,
+      assignationDate: workOrderSQLResponse.assignation_date,
+      completionDate: workOrderSQLResponse.completion_date,
+      status: workOrderSQLResponse.status,
     };
   }
 }

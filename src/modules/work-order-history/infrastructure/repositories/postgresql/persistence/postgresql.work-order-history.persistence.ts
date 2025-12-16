@@ -1,49 +1,45 @@
+/* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
 import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { InterfaceWorkOrderHistoryRepository } from '../../../../domain/contracts/work-order-history.interface.repository';
 import { WorkOrderHistoryResponse } from '../../../../domain/schemas/dto/response/work-order-history.response';
 import { WorkOrderHistoryModel } from '../../../../domain/schemas/models/work-order-history.model';
-import { WorkOrderHistorySQLResponse } from '../../../interfaces/sql/work-order-history.sql.response';
+import {
+  ViewWorkOrderHistorySqlResponse,
+  WorkOrderHistorySQLResponse,
+} from '../../../interfaces/sql/work-order-history.sql.response';
 import { WorkOrderHistoryAdapter } from '../adapters/postgresql.work-order-history.adapter';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
+import { ViewWorkOrderHistoryResponse } from '../../../../domain/schemas/dto/response/view-work-order-history.response';
 
 @Injectable()
 export class PostgresqlWorkOrderHistoryPersistence
-  implements InterfaceWorkOrderHistoryRepository {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) { }
+  implements InterfaceWorkOrderHistoryRepository
+{
+  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
 
   async create(
     workOrderHistory: WorkOrderHistoryModel,
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
       const query: string = `
-      INSERT INTO historialordentrabajo
-      (
-        ordenTrabajoId,
-        fechaCambio,
-        estadoAnteriorId,
-        estadoNuevoId,
-        usuarioId,
-        descripcionCambio
-      )
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING historialId AS "workOrderHistoryId",
-                ordenTrabajoId AS "workOrderId",
-                fechaCambio AS "changeDate",
-                estadoAnteriorId AS "previousStatusId",
-                estadoNuevoId AS "newStatusId",
-                usuarioId AS "userId",
-                descripcionCambio AS "changeDescription";
+        INSERT INTO work_orders.historial_estado_orden_trabajo
+          (id_orden_trabajo, id_estado, id_usuario, descripcion_cambio, clave_catastral, codigo_orden)
+          VALUES ($1, $2, $3, $4, $5, $6)
+        RETURNING id_historial AS work_order_history_id, id_orden_trabajo AS work_order_id, id_estado AS status_id,
+          fecha_cambio AS change_date, id_usuario AS user_id,
+          descripcion_cambio AS change_description, clave_catastral AS cadastral_key,
+          codigo_orden AS order_code;
       `;
 
       const params = [
         workOrderHistory.workOrderId,
-        workOrderHistory.changeDate,
-        workOrderHistory.previousStatusId,
-        workOrderHistory.newStatusId,
+        workOrderHistory.statusId,
         workOrderHistory.userId,
         workOrderHistory.changeDescription,
+        workOrderHistory.cadastralKey,
+        workOrderHistory.orderCode,
       ];
 
       const result =
@@ -76,31 +72,26 @@ export class PostgresqlWorkOrderHistoryPersistence
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
       const query: string = `
-      UPDATE historialordentrabajo
+      UPDATE work_orders.historial_estado_orden_trabajo
       SET
-        ordenTrabajoId = COALESCE($1, ordenTrabajoId),
-        fechaCambio = COALESCE($2, fechaCambio),
-        estadoAnteriorId = COALESCE($3, estadoAnteriorId),
-        estadoNuevoId = COALESCE($4, estadoNuevoId),
-        usuarioId = COALESCE($5, usuarioId),
-        descripcionCambio = COALESCE($6, descripcionCambio)
-      WHERE historialId = $7
-      RETURNING historialId AS "workOrderHistoryId",
-                ordenTrabajoId AS "workOrderId",
-                fechaCambio AS "changeDate",
-                estadoAnteriorId AS "previousStatusId",
-                estadoNuevoId AS "newStatusId",
-                usuarioId AS "userId",
-                descripcionCambio AS "changeDescription";
+        id_estado = COALESCE($1, id_estado),
+        id_usuario = COALESCE($2, id_usuario),
+        descripcion_cambio = COALESCE($3, descripcion_cambio),
+        cadastral_key = COALESCE($4, clave_catastral),
+        codigo_orden = COALESCE($5, codigo_orden)
+      WHERE id_historial = $6
+      RETURNING id_historial AS work_order_history_id, id_orden_trabajo AS work_order_id, id_estado AS status_id,
+        fecha_cambio AS change_date, id_usuario AS user_id,
+        descripcion_cambio AS change_description, clave_catastral AS cadastral_key,
+        codigo_orden AS order_code;
       `;
 
       const params = [
-        workOrderHistory.workOrderId,
-        workOrderHistory.changeDate,
-        workOrderHistory.previousStatusId,
-        workOrderHistory.newStatusId,
+        workOrderHistory.statusId,
         workOrderHistory.userId,
         workOrderHistory.changeDescription,
+        workOrderHistory.cadastralKey,
+        workOrderHistory.orderCode,
         workOrderHistoryId,
       ];
 
@@ -134,15 +125,16 @@ export class PostgresqlWorkOrderHistoryPersistence
     try {
       const query: string = `
       SELECT
-        historialId AS "workOrderHistoryId",
-        ordenTrabajoId AS "workOrderId",
-        fechaCambio AS "changeDate",
-        estadoAnteriorId AS "previousStatusId",
-        estadoNuevoId AS "newStatusId",
-        usuarioId AS "userId",
-        descripcionCambio AS "changeDescription"
-      FROM historialordentrabajo
-      WHERE historialId = $1;
+        id_historial AS work_order_history_id,
+        id_orden_trabajo AS work_order_id,
+        id_estado AS status_id,
+        fecha_cambio AS change_date,
+        id_usuario AS user_id,
+        descripcion_cambio AS change_description,
+        clave_catastral AS cadastral_key,
+        codigo_orden AS order_code
+      FROM work_orders.historial_estado_orden_trabajo
+      WHERE id_historial = $1;
       `;
 
       const params = [workOrderHistoryId];
@@ -169,20 +161,21 @@ export class PostgresqlWorkOrderHistoryPersistence
   }
 
   async findByWorkOrderId(
-    workOrderId: number,
+    workOrderId: string,
   ): Promise<WorkOrderHistoryResponse[] | null> {
     try {
       const query: string = `
       SELECT
-        historialId AS "workOrderHistoryId",
-        ordenTrabajoId AS "workOrderId",
-        fechaCambio AS "changeDate",
-        estadoAnteriorId AS "previousStatusId",
-        estadoNuevoId AS "newStatusId",
-        usuarioId AS "userId",
-        descripcionCambio AS "changeDescription"
-      FROM historialordentrabajo
-      WHERE ordenTrabajoId = $1;
+        id_historial AS work_order_history_id,
+        id_orden_trabajo AS work_order_id,
+        id_estado AS status_id,
+        fecha_cambio AS change_date,
+        id_usuario AS user_id,
+        descripcion_cambio AS change_description,
+        clave_catastral AS cadastral_key,
+        codigo_orden AS order_code
+      FROM work_orders.historial_estado_orden_trabajo
+      WHERE id_orden_trabajo = $1;
       `;
 
       const params = [workOrderId];
@@ -197,8 +190,10 @@ export class PostgresqlWorkOrderHistoryPersistence
         return null;
       }
 
-      const responses = result.map(
-        WorkOrderHistoryAdapter.fromWorkOrderHistorySQLResponseToWorkOrderHistoryResponse,
+      const responses = result.map((sqlResponse) =>
+        WorkOrderHistoryAdapter.fromWorkOrderHistorySQLResponseToWorkOrderHistoryResponse(
+          sqlResponse,
+        ),
       );
 
       return responses;
@@ -211,14 +206,15 @@ export class PostgresqlWorkOrderHistoryPersistence
     try {
       const query: string = `
       SELECT
-        historialId AS "workOrderHistoryId",
-        ordenTrabajoId AS "workOrderId",
-        fechaCambio AS "changeDate",
-        estadoAnteriorId AS "previousStatusId",
-        estadoNuevoId AS "newStatusId",
-        usuarioId AS "userId",
-        descripcionCambio AS "changeDescription"
-      FROM historialordentrabajo;
+        id_historial AS work_order_history_id,
+        id_orden_trabajo AS work_order_id,
+        id_estado AS status_id,
+        fecha_cambio AS change_date,
+        id_usuario AS user_id,
+        descripcion_cambio AS change_description,
+        clave_catastral AS cadastral_key,
+        codigo_orden AS order_code
+      FROM work_orders.historial_estado_orden_trabajo;
       `;
 
       const result =
@@ -228,12 +224,105 @@ export class PostgresqlWorkOrderHistoryPersistence
         return null;
       }
 
-      const responses = result.map(
-        WorkOrderHistoryAdapter.fromWorkOrderHistorySQLResponseToWorkOrderHistoryResponse,
+      const responses = result.map((sqlResponse) =>
+        WorkOrderHistoryAdapter.fromWorkOrderHistorySQLResponseToWorkOrderHistoryResponse(
+          sqlResponse,
+        ),
       );
 
       return responses;
     } catch (error) {
+      throw error;
+    }
+  }
+  async findAllViewHistoriesWorkOrders(pagination?: {
+    limit?: number;
+    offset?: number;
+  }): Promise<ViewWorkOrderHistoryResponse[]> {
+    try {
+      let query = `
+      SELECT
+        *
+      FROM work_orders.view_historical_work_orders
+      ORDER BY state_change_date DESC, work_order_id DESC
+    `;
+
+      const params: number[] = [];
+
+      if (pagination?.limit !== undefined) {
+        if (pagination.limit < 0) throw new Error('Limit must be positive');
+        params.push(pagination.limit);
+        query += ` LIMIT $${params.length}`;
+      }
+
+      if (pagination?.offset !== undefined) {
+        if (pagination.offset < 0) throw new Error('Offset must be positive');
+        params.push(pagination.offset);
+        query += ` OFFSET $${params.length}`;
+      }
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderHistorySqlResponse>(
+          query,
+          params,
+        );
+
+      const responses =
+        WorkOrderHistoryAdapter.fromViewWorkOrderHistoriesSQLResponseToViewWorkOrderHistoriesResponse(
+          result,
+        );
+
+      return responses;
+    } catch (error) {
+      console.error('Error fetching work order histories:', error);
+      throw error;
+    }
+  }
+
+  async findAllViewHistoriesWorkOrdersByOrderCode(
+    orderCode: string,
+    pagination?: { limit?: number; offset?: number },
+  ): Promise<ViewWorkOrderHistoryResponse[]> {
+    try {
+      let query = `
+      SELECT
+        *
+      FROM work_orders.view_historical_work_orders
+      WHERE work_order_code = $1
+      ORDER BY state_change_date DESC, work_order_id DESC
+    `;
+
+      const params: (string | number)[] = [orderCode];
+
+      if (pagination?.limit !== undefined) {
+        if (pagination.limit < 0) throw new Error('Limit must be positive');
+        params.push(pagination.limit);
+        query += ` LIMIT $${params.length}`;
+      }
+
+      if (pagination?.offset !== undefined) {
+        if (pagination.offset < 0) throw new Error('Offset must be positive');
+        params.push(pagination.offset);
+        query += ` OFFSET $${params.length}`;
+      }
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderHistorySqlResponse>(
+          query,
+          params,
+        );
+
+      const responses =
+        WorkOrderHistoryAdapter.fromViewWorkOrderHistoriesSQLResponseToViewWorkOrderHistoriesResponse(
+          result,
+        );
+
+      return responses;
+    } catch (error) {
+      console.error(
+        'Error fetching work order histories by order code:',
+        error,
+      );
       throw error;
     }
   }

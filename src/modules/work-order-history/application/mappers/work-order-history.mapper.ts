@@ -1,44 +1,46 @@
-import { CreateWorkHistoryRequest } from "../../domain/schemas/dto/request/creeate.work-order-history.request";
-import { UpdateWorkOrderHistoryRequest } from "../../domain/schemas/dto/request/update.work-order-history.request";
-import { WorkOrderHistoryResponse } from "../../domain/schemas/dto/response/work-order-history.response";
-import { WorkOrderHistoryModel } from "../../domain/schemas/models/work-order-history.model";
+import { CreateWorkHistoryRequest } from '../../domain/schemas/dto/request/creeate.work-order-history.request';
+import { UpdateWorkOrderHistoryRequest } from '../../domain/schemas/dto/request/update.work-order-history.request';
+import { WorkOrderHistoryResponse } from '../../domain/schemas/dto/response/work-order-history.response';
+import { WorkOrderHistoryModel } from '../../domain/schemas/models/work-order-history.model';
 
 export class WorkOrderHistoryMapper {
   static fromCreateWorkOrderHistoryRequestToWorkOrderHistoryModel(
     request: CreateWorkHistoryRequest,
   ): WorkOrderHistoryModel {
-    return WorkOrderHistoryModel.create(
-      request.workOrderId,
-      request.changeDate,
-      request.userId,
-      request.previousStatusId,
-      request.newStatusId,
-      request.changeDescription,
-    );
+    return WorkOrderHistoryModel.create({
+      workOrderHistoryId: 0,
+      workOrderId: request.workOrderId,
+      statusId: request.statusId,
+      changeDate: request.changeDate || new Date(),
+      userId: request.userId,
+      changeDescription: request.changeDescription,
+      cadastralKey: request.cadastralKey,
+      orderCode: request.orderCode,
+    });
   }
 
   static fromUpdateWorkOrderHistoryRequestToWorkOrderHistoryModel(
-    request: UpdateWorkOrderHistoryRequest,
+    request: Partial<UpdateWorkOrderHistoryRequest>,
   ): Partial<WorkOrderHistoryModel> {
     const workOrderHistoryModel: Partial<WorkOrderHistoryModel> = {};
 
-    if (request.workOrderId !== undefined) {
-      workOrderHistoryModel.workOrderId = request.workOrderId;
+    if (request.statusId !== undefined) {
+      workOrderHistoryModel['statusId'] = request.statusId;
     }
     if (request.changeDate !== undefined) {
-      workOrderHistoryModel.changeDate = request.changeDate;
-    }
-    if (request.previousStatusId !== undefined) {
-      workOrderHistoryModel.previousStatusId = request.previousStatusId;
-    }
-    if (request.newStatusId !== undefined) {
-      workOrderHistoryModel.newStatusId = request.newStatusId;
+      workOrderHistoryModel['changeDate'] = request.changeDate;
     }
     if (request.userId !== undefined) {
-      workOrderHistoryModel.userId = request.userId;
+      workOrderHistoryModel['userId'] = request.userId;
     }
     if (request.changeDescription !== undefined) {
-      workOrderHistoryModel.changeDescription = request.changeDescription;
+      workOrderHistoryModel['changeDescription'] = request.changeDescription;
+    }
+    if (request.cadastralKey !== undefined) {
+      workOrderHistoryModel['cadastralKey'] = request.cadastralKey;
+    }
+    if (request.orderCode !== undefined) {
+      workOrderHistoryModel['orderCode'] = request.orderCode;
     }
 
     return workOrderHistoryModel;
@@ -50,11 +52,12 @@ export class WorkOrderHistoryMapper {
     return {
       workOrderHistoryId: model.workOrderHistoryId,
       workOrderId: model.workOrderId,
+      statusId: model.statusId,
       changeDate: model.changeDate,
-      previousStatusId: model.previousStatusId,
-      newStatusId: model.newStatusId,
       userId: model.userId,
       changeDescription: model.changeDescription,
+      cadastralKey: model.cadastralKey,
+      orderCode: model.orderCode,
     };
   }
 }

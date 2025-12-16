@@ -1,68 +1,68 @@
-import { ObservationModel } from "./observation.model";
-
 export class WorkOrderObservationModel {
+  private observationId: number;
+  private workOrderId: string;
+  private description: string;
+  private workerId: number;
+  private createdAt?: Date;
+
   constructor(
-    private readonly props: {
-      workOrderObservationId?: number;
-      workOrderId: number;
-      observation: ObservationModel;
-      registerDate?: Date;
-    }
+    observationId: number,
+    workOrderId: string,
+    description: string,
+    workerId: number,
+    createdAt?: Date,
   ) {
+    this.observationId = observationId;
+    this.workOrderId = workOrderId;
+    this.description = description;
+    this.workerId = workerId;
+    this.createdAt = createdAt;
   }
 
-  get workOrderObservationId(): number | undefined {
-    return this.props.workOrderObservationId;
+  getObservationId(): number {
+    return this.observationId;
   }
 
-  get workOrderId(): number {
-    return this.props.workOrderId;
+  getWorkOrderId(): string {
+    console.log('Getting workOrderId:', this.workOrderId);
+    return this.workOrderId;
   }
 
-  get observation(): ObservationModel {
-    return this.props.observation;
+  getDescription(): string {
+    return this.description;
   }
 
-  get registerDate(): Date | undefined {
-    return this.props.registerDate;
+  getCreatedAt(): Date | undefined {
+    return this.createdAt;
   }
 
-  set workOrderId(id: number) {
-    this.props.workOrderId = id;
+  getWorkerId(): number {
+    return this.workerId;
   }
 
-  set observation(observation: ObservationModel) {
-    this.props.observation = observation;
+  setDescription(description: string): void {
+    this.description = description;
   }
 
-  set registerDate(date: Date | undefined) {
-    this.props.registerDate = date;
+  setCreatedAt(createdAt: Date): void {
+    this.createdAt = createdAt;
   }
 
-  static create(
-    workOrderId: number,
-    observation: ObservationModel,
-    workOrderObservationId?: number,
-    registerDate?: Date
-  ): WorkOrderObservationModel {
-    return new WorkOrderObservationModel({
-      workOrderObservationId,
-      workOrderId,
-      observation: ObservationModel.create(
-        observation.observationId,
-        observation.observationTitle,
-        observation.observationDetails,
-      ),
-      registerDate,
-    });
+  setWorkerId(workerId: number): void {
+    this.workerId = workerId;
+  }
+
+  setWorkOrderId(workOrderId: string): void {
+    this.workOrderId = workOrderId;
   }
 
   toJSON() {
     return {
-      workOrderObservationId: this.workOrderObservationId,
+      observationId: this.observationId,
       workOrderId: this.workOrderId,
-      observation: this.observation.toJSON(),
-      registerDate: this.registerDate,
+      description: this.description,
+      workerId: this.workerId,
+      createdAt: this.createdAt,
     };
   }
 }

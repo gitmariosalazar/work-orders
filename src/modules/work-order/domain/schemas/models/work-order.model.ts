@@ -1,209 +1,288 @@
 export class WorkOrderModel {
   private workOrderId?: number;
-  private description: string;
-  private creationDate?: Date;
-  private asignationDate?: Date;
-  private startDate?: Date;
-  private completionDate?: Date;
-  private cancelationDate?: Date;
-  private workOrderTypeId: number;
+  private orderCode: string;
+  private workTypeId: number;
   private priorityId: number;
-  private workOrderStatusId: number;
-  private connectionId: string;
   private clientId?: string;
-  private createdUserId: string;
-  private assignedUserId?: string;
-  private estimateCost?: number;
-  private realCost?: number;
-  private observations?: string;
+  private creationDate?: Date;
+  private assignationDate?: Date;
+  private completionDate?: Date;
+  private status?: number;
+  private description: string;
+  private location: string;
+  private createdUserId: number;
+  private assignedUserId?: number;
+  private completedUserId?: number;
+  private coordinates?: string;
+  private metadata?: string;
+  private cadastralKey?: string;
+  private isDeleted?: boolean;
 
   constructor(
-    description: string,
-    workOrderTypeId: number,
+    orderCode: string,
+    workTypeId: number,
     priorityId: number,
-    workOrderStatusId: number,
-    connectionId: string,
-    createdUserId: string,
-    creationDate?: Date,
-    asignationDate?: Date,
-    startDate?: Date,
-    completionDate?: Date,
-    cancelationDate?: Date,
+    description: string,
+    location: string,
+    createdUserId: number,
+    workOrderId?: number,
     clientId?: string,
-    assignedUserId?: string,
-    estimateCost?: number,
-    realCost?: number,
-    observations?: string,
+    creationDate?: Date,
+    assignationDate?: Date,
+    completionDate?: Date,
+    status?: number,
+    assignedUserId?: number,
+    completedUserId?: number,
+    coordinates?: string,
+    metadata?: string,
+    cadastralKey?: string,
+    isDeleted?: boolean,
   ) {
-    this.description = description;
-    this.workOrderTypeId = workOrderTypeId;
+    this.orderCode = orderCode;
+    this.workTypeId = workTypeId;
     this.priorityId = priorityId;
-    this.workOrderStatusId = workOrderStatusId;
-    this.connectionId = connectionId;
+    this.description = description;
+    this.location = location;
     this.createdUserId = createdUserId;
-    if (creationDate) this.creationDate = creationDate;
-    if (asignationDate) this.asignationDate = asignationDate;
-    if (startDate) this.startDate = startDate;
-    if (completionDate) this.completionDate = completionDate;
-    if (cancelationDate) this.cancelationDate = cancelationDate;
-    if (clientId) this.clientId = clientId;
-    if (assignedUserId) this.assignedUserId = assignedUserId;
-    if (estimateCost) this.estimateCost = estimateCost;
-    if (realCost) this.realCost = realCost;
-    if (observations) this.observations = observations;
+    if (workOrderId !== undefined) {
+      this.workOrderId = workOrderId;
+    }
+    if (clientId !== undefined) {
+      this.clientId = clientId;
+    }
+    if (creationDate !== undefined) {
+      this.creationDate = creationDate;
+    }
+    if (assignationDate !== undefined) {
+      this.assignationDate = assignationDate;
+    }
+    if (completionDate !== undefined) {
+      this.completionDate = completionDate;
+    }
+    if (status !== undefined) {
+      this.status = status;
+    }
+    if (assignedUserId !== undefined) {
+      this.assignedUserId = assignedUserId;
+    }
+    if (completedUserId !== undefined) {
+      this.completedUserId = completedUserId;
+    }
+    if (coordinates !== undefined) {
+      this.coordinates = coordinates;
+    }
+    if (metadata !== undefined) {
+      this.metadata = metadata;
+    }
+    if (cadastralKey !== undefined) {
+      this.cadastralKey = cadastralKey;
+    }
+    if (isDeleted !== undefined) {
+      this.isDeleted = isDeleted;
+    }
+  }
+
+  toResponse() {
+    return {
+      workOrderId: this.workOrderId,
+      orderCode: this.orderCode,
+      workTypeId: this.workTypeId,
+      priorityId: this.priorityId,
+      clientId: this.clientId,
+      creationDate: this.creationDate,
+      assignationDate: this.assignationDate,
+      completionDate: this.completionDate,
+      status: this.status,
+      description: this.description,
+      location: this.location,
+      createdUserId: this.createdUserId,
+      assignedUserId: this.assignedUserId,
+      completedUserId: this.completedUserId,
+      coordinates: this.coordinates,
+      metadata: this.metadata,
+      cadastralKey: this.cadastralKey,
+      isDeleted: this.isDeleted,
+    };
   }
 
   getWorkOrderId(): number | undefined {
     return this.workOrderId;
   }
 
-  getDescription(): string {
-    return this.description;
+  getOrderCode(): string {
+    return this.orderCode;
   }
 
-  getCreationDate(): Date | undefined {
-    return this.creationDate;
-  }
-
-  getAsignationDate(): Date | undefined {
-    return this.asignationDate;
-  }
-
-  getStartDate(): Date | undefined {
-    return this.startDate;
-  }
-
-  getCompletionDate(): Date | undefined {
-    return this.completionDate;
-  }
-
-  getCancelationDate(): Date | undefined {
-    return this.cancelationDate;
-  }
-
-  getWorkOrderTypeId(): number {
-    return this.workOrderTypeId;
+  getWorkTypeId(): number {
+    return this.workTypeId;
   }
 
   getPriorityId(): number {
     return this.priorityId;
   }
 
-  getWorkOrderStatusId(): number {
-    return this.workOrderStatusId;
-  }
-
-  getConnectionId(): string {
-    return this.connectionId;
-  }
-
   getClientId(): string | undefined {
     return this.clientId;
   }
 
-  getCreatedUserId(): string {
+  getCreationDate(): Date | undefined {
+    return this.creationDate;
+  }
+
+  getAssignationDate(): Date | undefined {
+    return this.assignationDate;
+  }
+
+  getCompletionDate(): Date | undefined {
+    return this.completionDate;
+  }
+
+  getStatus(): number | undefined {
+    return this.status;
+  }
+
+  getDescription(): string {
+    return this.description;
+  }
+
+  getLocation(): string {
+    return this.location;
+  }
+
+  getCreatedUserId(): number {
     return this.createdUserId;
   }
 
-  getAssignedUserId(): string | undefined {
+  getAssignedUserId(): number | undefined {
     return this.assignedUserId;
   }
 
-  getEstimateCost(): number | undefined {
-    return this.estimateCost;
+  getCompletedUserId(): number | undefined {
+    return this.completedUserId;
   }
 
-  getRealCost(): number | undefined {
-    return this.realCost;
+  getCoordinates(): string | undefined {
+    return this.coordinates;
   }
 
-  getObservations(): string | undefined {
-    return this.observations;
+  getMetadata(): string | undefined {
+    return this.metadata;
   }
 
-  setDescription(description: string): void {
-    this.description = description;
+  getCadastralKey(): string | undefined {
+    return this.cadastralKey;
   }
 
-  setCreationDate(creationDate: Date): void {
-    this.creationDate = creationDate;
+  getIsDeleted(): boolean | undefined {
+    return this.isDeleted;
   }
 
-  setAsignationDate(asignationDate: Date): void {
-    this.asignationDate = asignationDate;
-  }
-
-  setStartDate(startDate: Date): void {
-    this.startDate = startDate;
+  setStatus(status: number): void {
+    this.status = status;
   }
 
   setCompletionDate(completionDate: Date): void {
     this.completionDate = completionDate;
   }
 
-  setCancelationDate(cancelationDate: Date): void {
-    this.cancelationDate = cancelationDate;
+  setAssignedUserId(assignedUserId: number): void {
+    this.assignedUserId = assignedUserId;
   }
 
-  setWorkOrderTypeId(workOrderTypeId: number): void {
-    this.workOrderTypeId = workOrderTypeId;
+  setCompletedUserId(completedUserId: number): void {
+    this.completedUserId = completedUserId;
   }
 
-  setPriorityId(priorityId: number): void {
-    this.priorityId = priorityId;
+  setCoordinates(coordinates: string): void {
+    this.coordinates = coordinates;
   }
 
-  setWorkOrderStatusId(workOrderStatusId: number): void {
-    this.workOrderStatusId = workOrderStatusId;
+  setMetadata(metadata: string): void {
+    this.metadata = metadata;
   }
 
-  setConnectionId(connectionId: string): void {
-    this.connectionId = connectionId;
+  setCadastralKey(cadastralKey: string): void {
+    this.cadastralKey = cadastralKey;
+  }
+
+  setIsDeleted(isDeleted: boolean): void {
+    this.isDeleted = isDeleted;
+  }
+
+  setAssignationDate(assignationDate: Date): void {
+    this.assignationDate = assignationDate;
+  }
+
+  setCreationDate(creationDate: Date): void {
+    this.creationDate = creationDate;
   }
 
   setClientId(clientId: string): void {
     this.clientId = clientId;
   }
 
-  setCreatedUserId(createdUserId: string): void {
+  setDescription(description: string): void {
+    this.description = description;
+  }
+
+  setLocation(location: string): void {
+    this.location = location;
+  }
+
+  setOrderCode(orderCode: string): void {
+    this.orderCode = orderCode;
+  }
+
+  setPriorityId(priorityId: number): void {
+    this.priorityId = priorityId;
+  }
+
+  setWorkTypeId(workTypeId: number): void {
+    this.workTypeId = workTypeId;
+  }
+
+  setCreatedUserId(createdUserId: number): void {
     this.createdUserId = createdUserId;
   }
 
-  setAssignedUserId(assignedUserId: string): void {
-    this.assignedUserId = assignedUserId;
+  setWorkOrderId(workOrderId: number): void {
+    this.workOrderId = workOrderId;
+  }
+  /*
+  setCompletionDateNull(): void {
+    this.completionDate = undefined;
   }
 
-  setEstimateCost(estimateCost: number): void {
-    this.estimateCost = estimateCost;
+  setAsignationDateNull(): void {
+    this.asignationDate = undefined;
   }
 
-  setRealCost(realCost: number): void {
-    this.realCost = realCost;
+  setClientIdNull(): void {
+    this.clientId = undefined;
   }
 
-  setObservations(observations: string): void {
-    this.observations = observations;
+  setAssignedUserIdNull(): void {
+    this.assignedUserId = undefined;
   }
 
-  toJSON(): object {
-    return {
-      workOrderId: this.workOrderId,
-      description: this.description,
-      creationDate: this.creationDate,
-      asignationDate: this.asignationDate,
-      startDate: this.startDate,
-      completionDate: this.completionDate,
-      cancelationDate: this.cancelationDate,
-      workOrderTypeId: this.workOrderTypeId,
-      priorityId: this.priorityId,
-      workOrderStatusId: this.workOrderStatusId,
-      connectionId: this.connectionId,
-      clientId: this.clientId,
-      createdUserId: this.createdUserId,
-      assignedUserId: this.assignedUserId,
-      estimateCost: this.estimateCost,
-      realCost: this.realCost,
-      observations: this.observations,
-    };
+  setCompletedUserIdNull(): void {
+    this.completedUserId = undefined;
   }
+
+  setCoordinatesNull(): void {
+    this.coordinates = undefined;
+  }
+
+  setMetadataNull(): void {
+    this.metadata = undefined;
+  }
+
+  setCadastralKeyNull(): void {
+    this.cadastralKey = undefined;
+  }
+
+  setIsDeletedNull(): void {
+    this.isDeleted = undefined;
+  }
+  */
 }

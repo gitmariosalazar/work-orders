@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion */
+/* eslint-disable no-useless-catch */
 import { Inject, Injectable } from '@nestjs/common';
 import { InterfaceWorkOrderObservationRepository } from '../../domain/contracts/work-order-observation.interface.repository';
 import { InterfaceWorkOrderObservationUseCase } from '../usecases/work-order-observation.use-case.interface';
@@ -12,17 +14,22 @@ import { UpdateWorkOrderObservationRequest } from '../../domain/schemas/dto/requ
 
 @Injectable()
 export class WorkOrderObservationService
-  implements InterfaceWorkOrderObservationUseCase {
+  implements InterfaceWorkOrderObservationUseCase
+{
   constructor(
     @Inject('WorkOrderObservationRepository')
     private readonly workOrderObservationRepository: InterfaceWorkOrderObservationRepository,
-  ) { }
+  ) {}
 
   async createWorkOrderObservation(
     workOrderObservation: CreateWorkOrderObservationRequest,
   ): Promise<WorkOrderObservationResponse | null> {
     try {
-      const requiredFields: string[] = ['workOrderId', 'observationDetails'];
+      const requiredFields: string[] = [
+        'workOrderId',
+        'description',
+        'workerId',
+      ];
 
       const missingFieldMessages: string[] = validateFields(
         workOrderObservation,
@@ -39,8 +46,6 @@ export class WorkOrderObservationService
         WorkOrderObservationMapper.fromCreateWorkOrderObservationRequestToWorkOrderObservationModel(
           workOrderObservation,
         );
-
-      workOrderObservationModel.observation.observationTitle = 'Observation for Work Order ' + workOrderObservationModel.workOrderId;
 
       const createdWorkOrderObservation: WorkOrderObservationResponse | null =
         await this.workOrderObservationRepository.create(
@@ -67,7 +72,8 @@ export class WorkOrderObservationService
     try {
       if (
         workOrderObservationId === undefined ||
-        workOrderObservationId === null
+        workOrderObservationId === null ||
+        isNaN(workOrderObservationId)
       ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
@@ -75,7 +81,11 @@ export class WorkOrderObservationService
         });
       }
 
-      const requiredFields: string[] = ['workOrderId', 'observationDetails'];
+      const requiredFields: string[] = [
+        'workOrderId',
+        'description',
+        'workerId',
+      ];
 
       const missingFieldMessages: string[] = validateFields(
         workOrderObservation,
@@ -93,9 +103,10 @@ export class WorkOrderObservationService
           workOrderObservation,
         );
 
-      if (workOrderObservationModelProps.observation) {
-        workOrderObservationModelProps.observation.observationTitle = 'Observation for Work Order ' + workOrderObservationModelProps.workOrderId;
-      }
+      console.log(
+        'Work order observation model properties to update:',
+        workOrderObservationModelProps,
+      );
 
       const updatedWorkOrderObservation: WorkOrderObservationResponse | null =
         await this.workOrderObservationRepository.update(
@@ -141,10 +152,14 @@ export class WorkOrderObservationService
   }
 
   async getWorkOrderObservationsByWorkOrderId(
-    workOrderId: number,
+    workOrderId: string,
   ): Promise<WorkOrderObservationResponse[]> {
     try {
-      if (workOrderId === undefined || workOrderId === null) {
+      if (
+        workOrderId === undefined ||
+        workOrderId === null ||
+        workOrderId.trim() === ''
+      ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'workOrderId is required.',

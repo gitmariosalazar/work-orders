@@ -1,7 +1,6 @@
 import { CreateWorkOrderObservationRequest } from '../../domain/schemas/dto/request/create.work-order-observation.request';
 import { UpdateWorkOrderObservationRequest } from '../../domain/schemas/dto/request/update.work-order-observation.request';
 import { WorkOrderObservationResponse } from '../../domain/schemas/dto/response/work-order-observation.response';
-import { ObservationModel } from '../../domain/schemas/models/observation.model';
 import { WorkOrderObservationModel } from '../../domain/schemas/models/work-order-observation.model';
 
 export class WorkOrderObservationMapper {
@@ -9,66 +8,52 @@ export class WorkOrderObservationMapper {
     model: WorkOrderObservationModel,
   ): WorkOrderObservationResponse {
     return {
-      workOrderObservationId: model.workOrderObservationId,
-      workOrderId: model.workOrderId,
-      observationId: model.observation.observationId,
-      observationTitle: model.observation.observationTitle,
-      observationDetails: model.observation.observationDetails,
-      registerDate: model.registerDate,
+      observationId: model.getObservationId(),
+      workOrderId: model.getWorkOrderId(),
+      description: model.getDescription(),
+      workerId: model.getWorkerId(),
+      createdAt: model.getCreatedAt(),
     };
   }
 
   static fromWorkOrderObservationResponseToWorkOrderObservationModel(
     response: WorkOrderObservationResponse,
   ): WorkOrderObservationModel {
-    return WorkOrderObservationModel.create(
+    return new WorkOrderObservationModel(
+      response.observationId,
       response.workOrderId,
-      new ObservationModel({
-        observationId: response.observationId,
-        observationTitle: response.observationTitle,
-        observationDetails: response.observationDetails,
-      }
-      ),
-      response.workOrderObservationId,
-      response.registerDate,
+      response.description,
+      response.workerId,
+      response.createdAt,
     );
   }
 
   static fromCreateWorkOrderObservationRequestToWorkOrderObservationModel(
     request: CreateWorkOrderObservationRequest,
   ): WorkOrderObservationModel {
-    return WorkOrderObservationModel.create(
+    return new WorkOrderObservationModel(
+      0,
       request.workOrderId,
-      new ObservationModel({
-        observationId: 0,
-        observationTitle: request.observationTitle,
-        observationDetails: request.observationDetails,
-      })
+      request.description,
+      request.workerId,
     );
   }
 
   static fromUpdateWorkOrderObservationRequestToWorkOrderObservationModel(
     request: Partial<UpdateWorkOrderObservationRequest>,
   ): Partial<WorkOrderObservationModel> {
-    const workOrderObservationModelProps: Partial<WorkOrderObservationModel> =
-      {};
+    const model = new WorkOrderObservationModel(0, '', '', 0);
 
     if (request.workOrderId !== undefined) {
-      workOrderObservationModelProps.workOrderId = request.workOrderId;
+      model.setWorkOrderId(request.workOrderId);
     }
-    if (request.observationTitle !== undefined) {
-      if (!workOrderObservationModelProps.observation) {
-        workOrderObservationModelProps.observation = new ObservationModel({
-          observationId: 0,
-          observationTitle: request.observationTitle,
-          observationDetails: request.observationDetails || '',
-        });
-      } else {
-        workOrderObservationModelProps.observation.observationTitle = request.observationTitle;
-        workOrderObservationModelProps.observation.observationDetails = request.observationDetails || '';
-      }
+    if (request.description !== undefined) {
+      model.setDescription(request.description);
+    }
+    if (request.workerId !== undefined) {
+      model.setWorkerId(request.workerId);
     }
 
-    return workOrderObservationModelProps;
+    return model;
   }
 }

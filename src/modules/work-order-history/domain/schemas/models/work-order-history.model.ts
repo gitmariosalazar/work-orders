@@ -3,87 +3,101 @@ export class WorkOrderHistoryModel {
     private readonly props: {
       workOrderHistoryId?: number;
       workOrderId: number;
+      statusId?: number;
       changeDate: Date;
-      previousStatusId?: number;
-      newStatusId?: number;
       userId: number;
       changeDescription?: string;
+      cadastralKey?: string;
+      orderCode?: string;
     },
-  ) { }
+  ) {}
+  public static create(props: {
+    workOrderHistoryId?: number;
+    workOrderId: number;
+    statusId?: number;
+    changeDate: Date;
+    userId: number;
+    changeDescription?: string;
+    cadastralKey?: string;
+    orderCode?: string;
+  }): WorkOrderHistoryModel {
+    return new WorkOrderHistoryModel(props);
+  }
 
-  // === Getters (solo lectura) ===
-  get workOrderHistoryId(): number | undefined {
+  public get workOrderHistoryId(): number | undefined {
     return this.props.workOrderHistoryId;
   }
 
-  get workOrderId(): number {
+  public get workOrderId(): number {
     return this.props.workOrderId;
   }
 
-  get changeDate(): Date {
+  public get statusId(): number | undefined {
+    return this.props.statusId;
+  }
+
+  public get changeDate(): Date {
     return this.props.changeDate;
   }
 
-  get previousStatusId(): number | undefined {
-    return this.props.previousStatusId;
-  }
-
-  get newStatusId(): number | undefined {
-    return this.props.newStatusId;
-  }
-
-  get userId(): number {
+  public get userId(): number {
     return this.props.userId;
   }
 
-  get changeDescription(): string | undefined {
+  public get changeDescription(): string | undefined {
     return this.props.changeDescription;
   }
 
-  set changeDescription(description: string | undefined) {
-    this.props.changeDescription = description;
+  public get cadastralKey(): string | undefined {
+    return this.props.cadastralKey;
   }
 
-  set newStatusId(statusId: number | undefined) {
-    this.props.newStatusId = statusId;
+  public get orderCode(): string | undefined {
+    return this.props.orderCode;
   }
 
-  set previousStatusId(statusId: number | undefined) {
-    this.props.previousStatusId = statusId;
+  public set changeDescription(value: string | undefined) {
+    this.props.changeDescription = value;
   }
 
-  set changeDate(date: Date) {
-    this.props.changeDate = date;
+  public set changeDate(value: Date) {
+    this.props.changeDate = value;
   }
 
-  set workOrderId(id: number) {
-    this.props.workOrderId = id;
+  public set statusId(value: number | undefined) {
+    this.props.statusId = value;
   }
 
-  set userId(id: number) {
-    this.props.userId = id;
+  public set userId(value: number) {
+    this.props.userId = value;
   }
 
-  static create(
-    workOrderId: number,
-    changeDate: Date,
-    userId: number,
-    previousStatusId?: number,
-    newStatusId?: number,
-    changeDescription?: string,
-  ): WorkOrderHistoryModel {
-    return new WorkOrderHistoryModel({
-      workOrderId,
-      changeDate,
-      userId,
-      previousStatusId,
-      newStatusId,
-      changeDescription,
-    });
+  public set cadastralKey(value: string | undefined) {
+    this.props.cadastralKey = value;
   }
 
-  // === toJSON para serialización limpia ===
-  toJSON(): Record<string, any> {
-    return { ...this.props };
+  public set orderCode(value: string | undefined) {
+    this.props.orderCode = value;
+  }
+
+  public set workOrderId(value: number) {
+    this.props.workOrderId = value;
+  }
+
+  public set workOrderHistoryId(value: number | undefined) {
+    this.props.workOrderHistoryId = value;
+  }
+
+  public toJSON(): object {
+    return {
+      workOrderHistoryId: this.workOrderHistoryId,
+      workOrderId: this.workOrderId,
+      statusId: this.statusId,
+      changeDate: this.changeDate,
+      userId: this.userId,
+      changeDescription: this.changeDescription,
+      cadastralKey: this.cadastralKey,
+      orderCode: this.orderCode,
+    };
   }
 }

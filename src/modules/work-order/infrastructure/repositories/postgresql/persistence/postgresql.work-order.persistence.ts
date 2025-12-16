@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/unbound-method */
+/* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkOrderRepository } from '../../../../domain/contracts/work-order.interface.repository';
 import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
@@ -7,44 +9,83 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkOrderAdapter } from '../adapters/postgresql.work-order.adapter';
 import { WorkOrderSQLResponse } from '../../../interfaces/sql/work-order.sql.response';
+import { toNull } from '../../../../../../shared/validators/to-null';
 
 @Injectable()
 export class PostgreSQLWorkOrderPersistence
-  implements InterfaceWorkOrderRepository {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) { }
+  implements InterfaceWorkOrderRepository
+{
+  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
 
   async createWorkOrder(
     workOrder: WorkOrderModel,
   ): Promise<WorkOrderResponse | null> {
     try {
       const query = `
-        insert into ordentrabajo(descripcion,tipoordentrabajoid, prioridadid, estadoordentrabajoid, acometidaid,usuariocreadorid, clienteid) values ($1, $2, $3, $4, $5, $6, $7)
-        RETURNING ordenTrabajoId as "workOrderId",
-        descripcion AS "description",
-        fechaCreacion AS "creationDate",
-        fechaAsignacion AS "assignmentDate",
-        fechaInicio AS "startDate",
-        fechaCompletacion AS "completionDate",
-        fechaCancelacion AS "cancellationDate",
-        tipoOrdenTrabajoId AS "workOrderTypeId",
-        prioridadId AS "priorityId",
-        estadoOrdenTrabajoId AS "workOrderStatusId",
-        acometidaId AS "serviceConnectionId",
-        clienteId AS "clientId",
-        usuarioCreadorId AS "creatorUserId",
-        usuarioAsignadoId AS "assignedUserId",
-        costoEstimado AS "estimatedCost",
-        costoReal AS "actualCost",
-        observaciones AS "observations" ;
+        INSERT INTO work_orders.orden_trabajo (
+            id_tipo_trabajo,
+            id_prioridad,
+            estado,
+            id_cliente,
+            descripcion,
+            ubicacion,
+            usuario_creacion,
+            coordenadas,
+            metadata,
+            clave_catastral
+        ) VALUES (
+            $1,  -- id_tipo_trabajo (BIGINT)
+            $2,  -- id_prioridad (BIGINT)
+            $3,   -- estado (INT, por defecto 0 - pendiente)
+            $4,  -- id_cliente (BIGINT)
+            $5,  -- descripcion (TEXT, opcional)
+            $6,  -- ubicacion (VARCHAR, opcional)
+            $7,  -- usuario_creacion (BIGINT, opcional)
+            work_orders.ST_SetSRID(work_orders.ST_MakePoint($8, $9), 4326),  -- lng, lat → coordenadas
+            $10,  -- metadata (JSONB, opcional)
+            $11  -- clave_catastral (VARCHAR, opcional)
+        )
+        RETURNING 
+            id_orden_trabajo::TEXT AS work_order_id,
+            codigo_orden AS order_code,
+            id_tipo_trabajo AS work_type_id,
+            id_prioridad AS priority_id,
+            id_cliente::TEXT AS client_id,
+            fecha_creacion AS creation_date,
+            fecha_asignacion AS assignation_date,
+            fecha_completada AS completion_date,
+            estado AS status,
+            descripcion AS description,
+            ubicacion AS location,
+            usuario_creacion::TEXT AS created_user_id,
+            usuario_asignacion::TEXT AS assigned_user_id,
+            usuario_completacion::TEXT AS completed_user_id,
+            coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
+            metadata::TEXT AS metadata,              -- JSON como string
+            clave_catastral AS cadastral_key,
+            is_deleted;
       `;
       const values = [
-        workOrder.getDescription(),
-        workOrder.getWorkOrderTypeId(),
-        workOrder.getPriorityId(),
-        workOrder.getWorkOrderStatusId(),
-        workOrder.getConnectionId(),
-        workOrder.getCreatedUserId(),
-        workOrder.getClientId(),
+        toNull(workOrder.getWorkTypeId()),
+        toNull(workOrder.getPriorityId()),
+        toNull(workOrder.getStatus()),
+        toNull(workOrder.getClientId()),
+        toNull(workOrder.getDescription()),
+        toNull(workOrder.getLocation()),
+        toNull(workOrder.getCreatedUserId()),
+        // coordenadas
+        toNull(
+          parseFloat(
+            workOrder.getCoordinates()?.split('(')[1]?.split(' ')?.[0] ?? '',
+          ) || null,
+        ),
+        toNull(
+          parseFloat(
+            workOrder.getCoordinates()?.split(' ')[1]?.split(')')?.[0] ?? '',
+          ) || null,
+        ),
+        toNull(workOrder.getMetadata()),
+        toNull(workOrder.getCadastralKey()),
       ];
 
       const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
@@ -67,47 +108,56 @@ export class PostgreSQLWorkOrderPersistence
   }
 
   async updateWorkOrder(
-    workOrderId: number,
+    orderCode: string,
     workOrder: WorkOrderModel,
   ): Promise<WorkOrderResponse | null> {
     try {
       const query = `
-        UPDATE ordentrabajo
-        SET descripcion = $1,
-            tipoordentrabajoid = $2,
-            prioridadid = $3,
-            estadoordentrabajoid = $4,
-            acometidaid = $5,
-            usuariocreadorid = $6,
-            clienteid = $7
-        WHERE ordenTrabajoId = $8
-        RETURNING ordenTrabajoId as "workOrderId",
-        descripcion AS "description",
-        fechaCreacion AS "creationDate",
-        fechaAsignacion AS "assignmentDate",
-        fechaInicio AS "startDate",
-        fechaCompletacion AS "completionDate",
-        fechaCancelacion AS "cancellationDate",
-        tipoOrdenTrabajoId AS "workOrderTypeId",
-        prioridadId AS "priorityId",
-        estadoOrdenTrabajoId AS "workOrderStatusId",
-        acometidaId AS "serviceConnectionId",
-        clienteId AS "clientId",
-        usuarioCreadorId AS "creatorUserId",
-        usuarioAsignadoId AS "assignedUserId",
-        costoEstimado AS "estimatedCost",
-        costoReal AS "actualCost",
-        observaciones AS "observations" ;
+        UPDATE work_orders.orden_trabajo
+        SET
+            descripcion = COALESCE($1, descripcion),
+            id_tipo_trabajo = COALESCE($2, id_tipo_trabajo),
+            id_prioridad = COALESCE($3, id_prioridad),
+            estado = COALESCE($4, estado),
+            id_cliente = COALESCE($5, id_cliente),
+            ubicacion = COALESCE($6, ubicacion),
+            usuario_asignacion = COALESCE($7, usuario_asignacion),
+            usuario_completacion = COALESCE($8, usuario_completacion),
+            metadata = COALESCE($9, metadata),
+            clave_catastral = COALESCE($10, clave_catastral)
+        WHERE codigo_orden = $11
+        RETURNING 
+            id_orden_trabajo::TEXT AS work_order_id,
+            codigo_orden AS order_code,
+            id_tipo_trabajo AS work_type_id,
+            id_prioridad AS priority_id,
+            id_cliente::TEXT AS client_id,
+            fecha_creacion AS creation_date,
+            fecha_asignacion AS assignation_date,
+            fecha_completada AS completion_date,
+            estado AS status,
+            descripcion AS description,
+            ubicacion AS location,
+            usuario_creacion::TEXT AS created_user_id,
+            usuario_asignacion::TEXT AS assigned_user_id,
+            usuario_completacion::TEXT AS completed_user_id,
+            coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
+            metadata::TEXT AS metadata,              -- JSON como string
+            clave_catastral AS cadastral_key,
+            is_deleted;
       `;
       const values = [
-        workOrder.getDescription(),
-        workOrder.getWorkOrderTypeId(),
-        workOrder.getPriorityId(),
-        workOrder.getWorkOrderStatusId(),
-        workOrder.getConnectionId(),
-        workOrder.getCreatedUserId(),
-        workOrder.getClientId(),
-        workOrderId,
+        toNull(workOrder.getDescription()),
+        toNull(workOrder.getWorkTypeId()),
+        toNull(workOrder.getPriorityId()),
+        toNull(workOrder.getStatus()),
+        toNull(workOrder.getClientId()),
+        toNull(workOrder.getLocation()),
+        toNull(workOrder.getAssignedUserId()),
+        toNull(workOrder.getCompletedUserId()),
+        toNull(workOrder.getMetadata()),
+        toNull(workOrder.getCadastralKey()),
+        orderCode,
       ];
 
       const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
@@ -135,25 +185,26 @@ export class PostgreSQLWorkOrderPersistence
     try {
       const query = `
         SELECT 
-          ordenTrabajoId as "workOrderId",
-          descripcion AS "description",
-          fechaCreacion AS "creationDate",
-          fechaAsignacion AS "assignmentDate",
-          fechaInicio AS "startDate",
-          fechaCompletacion AS "completionDate",
-          fechaCancelacion AS "cancellationDate",
-          tipoOrdenTrabajoId AS "workOrderTypeId",
-          prioridadId AS "priorityId",
-          estadoOrdenTrabajoId AS "workOrderStatusId",
-          acometidaId AS "serviceConnectionId",
-          clienteId AS "clientId",
-          usuarioCreadorId AS "creatorUserId",
-          usuarioAsignadoId AS "assignedUserId",
-          costoEstimado AS "estimatedCost",
-          costoReal AS "actualCost",
-          observaciones AS "observations"
-        FROM ordentrabajo
-        WHERE clienteId = $1;
+          id_orden_trabajo::TEXT AS work_order_id,
+          codigo_orden AS order_code,
+          id_tipo_trabajo AS work_type_id,
+          id_prioridad AS priority_id,
+          id_cliente::TEXT AS client_id,
+          fecha_creacion AS creation_date,
+          fecha_asignacion AS assignation_date,
+          fecha_completada AS completion_date,
+          estado AS status,
+          descripcion AS description,
+          ubicacion AS location,
+          usuario_creacion::TEXT AS created_user_id,
+          usuario_asignacion::TEXT AS assigned_user_id,
+          usuario_completacion::TEXT AS completed_user_id,
+          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
+          metadata::TEXT AS metadata,              -- JSON como string
+          clave_catastral AS cadastral_key,
+          is_deleted
+        FROM work_orders.orden_trabajo
+        WHERE id_cliente = $1;
       `;
       const values = [clientId];
 
@@ -175,33 +226,32 @@ export class PostgreSQLWorkOrderPersistence
     }
   }
 
-  async getWorkOrderById(
-    workOrderId: number,
-  ): Promise<WorkOrderResponse | null> {
+  async getWorkOrderById(orderCode: string): Promise<WorkOrderResponse | null> {
     try {
       const query = `
-        SELECT 
-          ordenTrabajoId as "workOrderId",
-          descripcion AS "description",
-          fechaCreacion AS "creationDate",
-          fechaAsignacion AS "assignmentDate",
-          fechaInicio AS "startDate",
-          fechaCompletacion AS "completionDate",
-          fechaCancelacion AS "cancellationDate",
-          tipoOrdenTrabajoId AS "workOrderTypeId",
-          prioridadId AS "priorityId",
-          estadoOrdenTrabajoId AS "workOrderStatusId",
-          acometidaId AS "serviceConnectionId",
-          clienteId AS "clientId",
-          usuarioCreadorId AS "creatorUserId",
-          usuarioAsignadoId AS "assignedUserId",
-          costoEstimado AS "estimatedCost",
-          costoReal AS "actualCost",
-          observaciones AS "observations"
-        FROM ordentrabajo
-        WHERE ordenTrabajoId = $1;
+        SELECT
+          id_orden_trabajo::TEXT AS work_order_id,
+          codigo_orden AS order_code,
+          id_tipo_trabajo AS work_type_id,
+          id_prioridad AS priority_id,
+          id_cliente::TEXT AS client_id,
+          fecha_creacion AS creation_date,
+          fecha_asignacion AS assignation_date,
+          fecha_completada AS completion_date,
+          estado AS status,
+          descripcion AS description,
+          ubicacion AS location,
+          usuario_creacion::TEXT AS created_user_id,
+          usuario_asignacion::TEXT AS assigned_user_id,
+          usuario_completacion::TEXT AS completed_user_id,
+          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
+          metadata::TEXT AS metadata,              -- JSON como string
+          clave_catastral AS cadastral_key,
+          is_deleted
+        FROM work_orders.orden_trabajo
+        WHERE codigo_orden = $1;
       `;
-      const values = [workOrderId];
+      const values = [orderCode];
 
       const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
         query,
@@ -224,24 +274,25 @@ export class PostgreSQLWorkOrderPersistence
     try {
       const query = `
         SELECT 
-          ordenTrabajoId as "workOrderId",
-          descripcion AS "description",
-          fechaCreacion AS "creationDate",
-          fechaAsignacion AS "assignmentDate",
-          fechaInicio AS "startDate",
-          fechaCompletacion AS "completionDate",
-          fechaCancelacion AS "cancellationDate",
-          tipoOrdenTrabajoId AS "workOrderTypeId",
-          prioridadId AS "priorityId",
-          estadoOrdenTrabajoId AS "workOrderStatusId",
-          acometidaId AS "serviceConnectionId",
-          clienteId AS "clientId",
-          usuarioCreadorId AS "creatorUserId",
-          usuarioAsignadoId AS "assignedUserId",
-          costoEstimado AS "estimatedCost",
-          costoReal AS "actualCost",
-          observaciones AS "observations"
-        FROM ordentrabajo;
+          id_orden_trabajo::TEXT AS work_order_id,
+          codigo_orden AS order_code,
+          id_tipo_trabajo AS work_type_id,
+          id_prioridad AS priority_id,
+          id_cliente::TEXT AS client_id,
+          fecha_creacion AS creation_date,
+          fecha_asignacion AS assignation_date,
+          fecha_completada AS completion_date,
+          estado AS status,
+          descripcion AS description,
+          ubicacion AS location,
+          usuario_creacion::TEXT AS created_user_id,
+          usuario_asignacion::TEXT AS assigned_user_id,
+          usuario_completacion::TEXT AS completed_user_id,
+          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
+          metadata::TEXT AS metadata,              -- JSON como string
+          clave_catastral AS cadastral_key,
+          is_deleted
+        FROM work_orders.orden_trabajo;
       `;
 
       const result =
