@@ -9,6 +9,15 @@ import { statusCode } from '../../../../settings/environments/status-code';
 import { RpcException } from '@nestjs/microservices';
 import { WorkOrderModel } from '../../domain/schemas/models/work-order.model';
 import { WorkOrderMapper } from '../mappers/work-order.mapper';
+import {
+  ViewAllWorkOrdersFullDetailsResponse,
+  ViewWorkOrderAssignmentsResponse,
+  ViewWorkOrderAttachmentsResponse,
+  ViewWorkOrderMaterialsResponse,
+  ViewWorkOrderObservationsResponse,
+  ViewWorkOrdersByClientResponse,
+  ViewWorkOrderStatisticsResponse,
+} from '../../domain/schemas/dto/response/views.work-orders.response';
 
 @Injectable()
 export class WorkOrderService implements InterfaceWorkOrderUseCase {
@@ -177,6 +186,189 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
       }
 
       return workOrders;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderStatistics(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderStatisticsResponse[]> {
+    try {
+      const statistics = await this.workOrderRepository.getWorkOrderStatistics(
+        limit,
+        offset,
+      );
+
+      if (statistics.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order statistics found',
+        });
+      }
+
+      return statistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderAssignments(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderAssignmentsResponse[]> {
+    try {
+      const assignments =
+        await this.workOrderRepository.getWorkOrderAssignments(limit, offset);
+
+      if (assignments.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order assignments found',
+        });
+      }
+
+      return assignments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderMaterials(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderMaterialsResponse[]> {
+    try {
+      const materials = await this.workOrderRepository.getWorkOrderMaterials(
+        limit,
+        offset,
+      );
+
+      if (materials.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order materials found',
+        });
+      }
+
+      return materials;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderObservations(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderObservationsResponse[]> {
+    try {
+      const observations =
+        await this.workOrderRepository.getWorkOrderObservations(limit, offset);
+
+      if (observations.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order observations found',
+        });
+      }
+
+      return observations;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderAttachments(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderAttachmentsResponse[]> {
+    try {
+      const attachments =
+        await this.workOrderRepository.getWorkOrderAttachments(limit, offset);
+
+      if (attachments.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order attachments found',
+        });
+      }
+
+      return attachments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrdersByClient(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrdersByClientResponse[]> {
+    try {
+      const ordersByClient =
+        await this.workOrderRepository.getWorkOrdersByClient(limit, offset);
+
+      if (ordersByClient.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders by client found',
+        });
+      }
+
+      return ordersByClient;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllWorkOrdersFullDetails(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewAllWorkOrdersFullDetailsResponse[]> {
+    try {
+      const fullDetails =
+        await this.workOrderRepository.getAllWorkOrdersFullDetails(
+          limit,
+          offset,
+        );
+
+      if (fullDetails.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders full details found',
+        });
+      }
+
+      return fullDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findWorkOrdersFullDetailsByOrderCode(
+    orderCode: string,
+  ): Promise<ViewAllWorkOrdersFullDetailsResponse | null> {
+    try {
+      if (!orderCode || orderCode.trim() === '') {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'Invalid work order code',
+        });
+      }
+
+      const fullDetails =
+        await this.workOrderRepository.findWorkOrdersFullDetailsByOrderCode(
+          orderCode,
+        );
+
+      if (!fullDetails) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `No work order full details found for order code ${orderCode}`,
+        });
+      }
+
+      return fullDetails;
     } catch (error) {
       throw error;
     }

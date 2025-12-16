@@ -10,6 +10,24 @@ import { statusCode } from '../../../../../../settings/environments/status-code'
 import { WorkOrderAdapter } from '../adapters/postgresql.work-order.adapter';
 import { WorkOrderSQLResponse } from '../../../interfaces/sql/work-order.sql.response';
 import { toNull } from '../../../../../../shared/validators/to-null';
+import {
+  ViewAllWorkOrdersFullDetailsResponse,
+  ViewWorkOrderAssignmentsResponse,
+  ViewWorkOrderAttachmentsResponse,
+  ViewWorkOrderMaterialsResponse,
+  ViewWorkOrderObservationsResponse,
+  ViewWorkOrdersByClientResponse,
+  ViewWorkOrderStatisticsResponse,
+} from '../../../../domain/schemas/dto/response/views.work-orders.response';
+import {
+  ViewAllWorkOrdersFullDetailsSqlResponse,
+  ViewWorkOrderAssignmentsSqlResponse,
+  ViewWorkOrderAttachmentsSqlResponse,
+  ViewWorkOrderMaterialsSqlResponse,
+  ViewWorkOrderObservationsSqlResponse,
+  ViewWorkOrdersByClientSqlResponse,
+  ViewWorkOrderStatisticsSqlResponse,
+} from '../../../interfaces/sql/views.work-orders.sql.response';
 
 @Injectable()
 export class PostgreSQLWorkOrderPersistence
@@ -306,6 +324,270 @@ export class PostgreSQLWorkOrderPersistence
         WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse,
       );
       return workOrders;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderStatistics(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderStatisticsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_order_statistics
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderStatisticsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order statistics found',
+        });
+      }
+
+      const statistics: ViewWorkOrderStatisticsResponse[] = result.map(
+        WorkOrderAdapter.fromWorkOrderStattisticsSQLResponseToWorkOrderStatisticsResponse,
+      );
+      return statistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderAssignments(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderAssignmentsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_order_assignments
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderAssignmentsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order assignments found',
+        });
+      }
+
+      const assignments: ViewWorkOrderAssignmentsResponse[] = result.map(
+        WorkOrderAdapter.fromViewWorkOrderAssignmentsSqlResponseToViewWorkOrderAssignmentsResponse,
+      );
+      return assignments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderMaterials(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderMaterialsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_order_materials
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderMaterialsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order materials found',
+        });
+      }
+
+      const materials: ViewWorkOrderMaterialsResponse[] = result.map(
+        WorkOrderAdapter.fromViewWorkOrderMaterialsSqlResponseToViewWorkOrderMaterialsResponse,
+      );
+      return materials;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderAttachments(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderAttachmentsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_order_attachments
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderAttachmentsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order attachments found',
+        });
+      }
+
+      const attachments: ViewWorkOrderAttachmentsResponse[] = result.map(
+        WorkOrderAdapter.fromViewWorkOrderAttachmentsSqlResponseToViewWorkOrderAttachmentsResponse,
+      );
+      return attachments;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderObservations(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrderObservationsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_order_observations
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrderObservationsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order observations found',
+        });
+      }
+
+      const observations: ViewWorkOrderObservationsResponse[] = result.map(
+        WorkOrderAdapter.fromViewWorkOrderObservationsSqlResponseToViewWorkOrderObservationsResponse,
+      );
+      return observations;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrdersByClient(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewWorkOrdersByClientResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_work_orders_by_client
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewWorkOrdersByClientSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders by client found',
+        });
+      }
+
+      const ordersByClient: ViewWorkOrdersByClientResponse[] = result.map(
+        WorkOrderAdapter.fromViewWorkOrdersByClientSqlResponseToViewWorkOrdersByClientResponse,
+      );
+      return ordersByClient;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllWorkOrdersFullDetails(
+    limit?: number,
+    offset?: number,
+  ): Promise<ViewAllWorkOrdersFullDetailsResponse[]> {
+    try {
+      const query = `
+        SELECT * FROM work_orders.view_all_work_orders_full_details
+        LIMIT $1 OFFSET $2;
+      `;
+      const values = [toNull(limit), toNull(offset)];
+
+      const result =
+        await this.postgreSqlService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders full details found',
+        });
+      }
+
+      const fullDetails: ViewAllWorkOrdersFullDetailsResponse[] = result.map(
+        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse,
+      );
+      return fullDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async findWorkOrdersFullDetailsByOrderCode(
+    orderCode: string,
+  ): Promise<ViewAllWorkOrdersFullDetailsResponse | null> {
+    try {
+      const query: string = `
+        SELECT * FROM work_orders.view_all_work_orders_full_details
+        WHERE work_order_code = $1;
+      `;
+      const values = [orderCode];
+
+      const result =
+        await this.postgreSqlService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
+          query,
+          values,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders full details found for the given order code',
+        });
+      }
+
+      const fullDetails: ViewAllWorkOrdersFullDetailsResponse =
+        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
+          result[0],
+        );
+      return fullDetails;
     } catch (error) {
       throw error;
     }
