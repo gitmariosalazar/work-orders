@@ -310,7 +310,7 @@ export class PostgreSQLWorkOrderPersistence
           metadata::TEXT AS metadata,              -- JSON como string
           clave_catastral AS cadastral_key,
           is_deleted
-        FROM work_orders.orden_trabajo;
+        FROM work_orders.orden_trabajo ORDER BY fecha_creacion DESC;
       `;
 
       const result =
