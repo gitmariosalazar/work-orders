@@ -18,6 +18,9 @@ import {
   ViewWorkOrdersByClientResponse,
   ViewWorkOrderStatisticsResponse,
 } from '../../domain/schemas/dto/response/views.work-orders.response';
+import { GetWorkOrderPriorityStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_priority_statistics.response';
+import { GetWorkOrderStatusStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_status_statistics.response';
+import { GetWorkOrderTypeStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_type_statistics.response';
 
 @Injectable()
 export class WorkOrderService implements InterfaceWorkOrderUseCase {
@@ -369,6 +372,66 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
       }
 
       return fullDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderPriorityStatistics(): Promise<
+    GetWorkOrderPriorityStatisticsResponse[]
+  > {
+    try {
+      const priorityStatistics =
+        await this.workOrderRepository.getWorkOrderPriorityStatistics();
+
+      if (priorityStatistics.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order priority statistics found',
+        });
+      }
+
+      return priorityStatistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderStatusStatistics(): Promise<
+    GetWorkOrderStatusStatisticsResponse[]
+  > {
+    try {
+      const statusStatistics =
+        await this.workOrderRepository.getWorkOrderStatusStatistics();
+
+      if (statusStatistics.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order status statistics found',
+        });
+      }
+
+      return statusStatistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderTypeStatistics(): Promise<
+    GetWorkOrderTypeStatisticsResponse[]
+  > {
+    try {
+      const typeStatistics =
+        await this.workOrderRepository.getWorkOrderTypeStatistics();
+
+      if (typeStatistics.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order type statistics found',
+        });
+      }
+
+      return typeStatistics;
     } catch (error) {
       throw error;
     }

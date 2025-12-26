@@ -99,4 +99,19 @@ export class WorkOrderController {
       orderCode,
     );
   }
+
+  @MessagePattern('work-orders.get-work-order-priority-statistics')
+  async getWorkOrderPriorityStatistics() {
+    return this.workOrderService.getWorkOrderPriorityStatistics();
+  }
+
+  @MessagePattern('work-orders.get-work-order-status-statistics')
+  async getWorkOrderStatusStatistics() {
+    return this.workOrderService.getWorkOrderStatusStatistics();
+  }
+
+  @MessagePattern('work-orders.get-work-order-type-statistics')
+  async getWorkOrderTypeStatistics() {
+    return this.workOrderService.getWorkOrderTypeStatistics();
+  }
 }

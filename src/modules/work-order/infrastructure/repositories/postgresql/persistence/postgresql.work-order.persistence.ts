@@ -28,6 +28,12 @@ import {
   ViewWorkOrdersByClientSqlResponse,
   ViewWorkOrderStatisticsSqlResponse,
 } from '../../../interfaces/sql/views.work-orders.sql.response';
+import { GetWorkOrderPriorityStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_priority_statistics.response';
+import { GetWorkOrderPriorityStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_priority_statistics.sql.response';
+import { GetWorkOrderTypeStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_type_statistics.response';
+import { GetWorkOrderStatusStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_status_statistics.sql.response';
+import { GetWorkOrderTypeStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_type_statistics.sql.response';
+import { GetWorkOrderStatusStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_status_statistics.response';
 
 @Injectable()
 export class PostgreSQLWorkOrderPersistence
@@ -588,6 +594,129 @@ export class PostgreSQLWorkOrderPersistence
           result[0],
         );
       return fullDetails;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderPriorityStatistics(): Promise<
+    GetWorkOrderPriorityStatisticsResponse[]
+  > {
+    try {
+      const query = `
+        SELECT
+            pot.nivel AS priority_level,
+            pot.id_prioridad AS priority_id,
+            pot.descripcion AS description,
+            COUNT(*) AS quantity,
+            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS percentage_of_total
+        FROM work_orders.orden_trabajo ot
+        JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_prioridad
+        WHERE ot.is_deleted = FALSE
+        GROUP BY pot.nivel,pot.id_prioridad, pot.descripcion
+        ORDER BY
+            CASE pot.nivel
+                WHEN 'Emergencia' THEN 1
+                WHEN 'Urgente' THEN 2
+                WHEN 'Alta' THEN 3
+                ELSE 4
+            END;
+      `;
+
+      const result =
+        await this.postgreSqlService.query<GetWorkOrderPriorityStatisticsSqlResponse>(
+          query,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order priority statistics found',
+        });
+      }
+
+      const statistics: GetWorkOrderPriorityStatisticsResponse[] = result.map(
+        WorkOrderAdapter.fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse,
+      );
+      return statistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderTypeStatistics(): Promise<
+    GetWorkOrderTypeStatisticsResponse[]
+  > {
+    try {
+      const query = `
+        SELECT
+            tt.nombre AS work_type,
+            tt.id_tipo_trabajo AS work_type_id,
+            COUNT(*) AS quantity,
+            COUNT(*) FILTER (WHERE ot.estado = 7) AS completed,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE ot.estado = 7) / NULLIF(COUNT(*), 0), 2) AS completion_rate_percentage
+        FROM work_orders.orden_trabajo ot
+        JOIN work_orders.tipo_trabajo tt ON ot.id_tipo_trabajo = tt.id_tipo_trabajo
+        WHERE ot.is_deleted = FALSE
+        GROUP BY tt.nombre, tt.id_tipo_trabajo
+        ORDER BY quantity DESC;
+      `;
+
+      const result =
+        await this.postgreSqlService.query<GetWorkOrderTypeStatisticsSqlResponse>(
+          query,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order type statistics found',
+        });
+      }
+
+      const statistics: GetWorkOrderTypeStatisticsResponse[] = result.map(
+        WorkOrderAdapter.fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse,
+      );
+      return statistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrderStatusStatistics(): Promise<
+    GetWorkOrderStatusStatisticsResponse[]
+  > {
+    try {
+      const query = `
+        SELECT
+            eot.nombre_estado AS status_name,
+            ot.estado AS status_id,
+            eot.descripcion AS status_description,
+            COUNT(*)  AS quantity,
+            ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS percentage_of_total
+        FROM work_orders.orden_trabajo ot
+        JOIN work_orders.estado_orden_trabajo eot ON ot.estado = eot.id_estado
+        WHERE ot.is_deleted = FALSE
+        GROUP BY eot.id_estado, eot.nombre_estado, ot.estado, eot.descripcion
+        ORDER BY quantity DESC;
+      `;
+
+      const result =
+        await this.postgreSqlService.query<GetWorkOrderStatusStatisticsSqlResponse>(
+          query,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work order status statistics found',
+        });
+      }
+
+      const statistics: GetWorkOrderStatusStatisticsResponse[] = result.map(
+        WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse,
+      );
+      return statistics;
     } catch (error) {
       throw error;
     }

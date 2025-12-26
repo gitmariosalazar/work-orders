@@ -1,3 +1,6 @@
+import { GetWorkOrderPriorityStatisticsResponse } from '../schemas/dto/response/get_work_order_priority_statistics.response';
+import { GetWorkOrderStatusStatisticsResponse } from '../schemas/dto/response/get_work_order_status_statistics.response';
+import { GetWorkOrderTypeStatisticsResponse } from '../schemas/dto/response/get_work_order_type_statistics.response';
 import {
   ViewAllWorkOrdersFullDetailsResponse,
   ViewWorkOrderAssignmentsResponse,
@@ -55,4 +58,12 @@ export interface InterfaceWorkOrderRepository {
   findWorkOrdersFullDetailsByOrderCode(
     orderCode: string,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse | null>;
+
+  getWorkOrderPriorityStatistics(): Promise<
+    GetWorkOrderPriorityStatisticsResponse[]
+  >;
+  getWorkOrderStatusStatistics(): Promise<
+    GetWorkOrderStatusStatisticsResponse[]
+  >;
+  getWorkOrderTypeStatistics(): Promise<GetWorkOrderTypeStatisticsResponse[]>;
 }

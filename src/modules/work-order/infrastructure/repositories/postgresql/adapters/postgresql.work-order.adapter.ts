@@ -1,3 +1,6 @@
+import { GetWorkOrderPriorityStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_priority_statistics.response';
+import { GetWorkOrderStatusStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_status_statistics.response';
+import { GetWorkOrderTypeStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_type_statistics.response';
 import {
   ViewAllWorkOrdersFullDetailsResponse,
   ViewWorkOrderAssignmentsResponse,
@@ -8,6 +11,9 @@ import {
   ViewWorkOrderStatisticsResponse,
 } from '../../../../domain/schemas/dto/response/views.work-orders.response';
 import { WorkOrderResponse } from '../../../../domain/schemas/dto/response/work-order.response';
+import { GetWorkOrderPriorityStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_priority_statistics.sql.response';
+import { GetWorkOrderStatusStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_status_statistics.sql.response';
+import { GetWorkOrderTypeStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_type_statistics.sql.response';
 import {
   ViewAllWorkOrdersFullDetailsSqlResponse,
   ViewWorkOrderAssignmentsSqlResponse,
@@ -140,30 +146,82 @@ export class WorkOrderAdapter {
       assignedToUserId: sqlResponse.assigned_to_user_id,
       completedByUserId: sqlResponse.completed_by_user_id,
       creationDate: new Date(sqlResponse.creation_date), // ISO date string
-      assignmentDate: sqlResponse.assignment_date ? new Date(sqlResponse.assignment_date) : null, // ISO date string
-      completionDate: sqlResponse.completion_date ? new Date(sqlResponse.completion_date) : null, // ISO date string
-      managementAttachments: sqlResponse.management_attachments?.map((attachment) => ({
-        fileName: attachment.file_name,
-        fileType: attachment.file_type,
-        fileUrl: attachment.file_url,
-        uploadDate: new Date(attachment.upload_date)
-      })) || [],
-      materialsUsed: sqlResponse.materials_used?.map((material) => ({
-        materialId: material.material_id,
-        quantity: material.quantity,
-        unitCost: material.unit_cost,
-        subtotalCost: material.subtotal_cost
-      })) || [],
-      observationsMade: sqlResponse.observations_made?.map((observation) => ({
-        observationText: observation.observation_text,
-        observationDate: new Date(observation.observation_date),
-        observerWorkerId: observation.observer_worker_id
-      })) || [],
-      assignedWorkers: sqlResponse.assigned_workers?.map((worker) => ({
-        workerId: worker.worker_id,
-        workerRole: worker.worker_role,
-        assignmentDate: new Date(worker.assignment_date)
-      })) || []
-    }; 
+      assignmentDate: sqlResponse.assignment_date
+        ? new Date(sqlResponse.assignment_date)
+        : null, // ISO date string
+      completionDate: sqlResponse.completion_date
+        ? new Date(sqlResponse.completion_date)
+        : null, // ISO date string
+      managementAttachments:
+        sqlResponse.management_attachments?.map((attachment) => ({
+          fileName: attachment.file_name,
+          fileType: attachment.file_type,
+          fileUrl: attachment.file_url,
+          uploadDate: new Date(attachment.upload_date),
+        })) || [],
+      materialsUsed:
+        sqlResponse.materials_used?.map((material) => ({
+          materialId: material.material_id,
+          quantity: material.quantity,
+          unitCost: material.unit_cost,
+          subtotalCost: material.subtotal_cost,
+        })) || [],
+      observationsMade:
+        sqlResponse.observations_made?.map((observation) => ({
+          observationText: observation.observation_text,
+          observationDate: new Date(observation.observation_date),
+          observerWorkerId: observation.observer_worker_id,
+        })) || [],
+      assignedWorkers:
+        sqlResponse.assigned_workers?.map((worker) => ({
+          workerId: worker.worker_id,
+          workerRole: worker.worker_role,
+          assignmentDate: new Date(worker.assignment_date),
+        })) || [],
+    };
+  }
+
+  static fromViewWorkOrdersFullDetailsSqlResponseToViewWorkOrdersFullDetailsResponse(
+    sqlResponse: ViewAllWorkOrdersFullDetailsSqlResponse,
+  ): ViewAllWorkOrdersFullDetailsResponse {
+    return this.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
+      sqlResponse,
+    );
+  }
+
+  static fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse(
+    workOrderSQLResponse: GetWorkOrderPriorityStatisticsSqlResponse,
+  ): GetWorkOrderPriorityStatisticsResponse {
+    return {
+      priorityLevel: workOrderSQLResponse.priority_level,
+      priorityId: workOrderSQLResponse.priority_id,
+      description: workOrderSQLResponse.description,
+      quantity: workOrderSQLResponse.quantity,
+      percentageOfTotal: workOrderSQLResponse.percentage_of_total,
+    };
+  }
+
+  static fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse(
+    workOrderSQLResponse: GetWorkOrderStatusStatisticsSqlResponse,
+  ): GetWorkOrderStatusStatisticsResponse {
+    return {
+      statusName: workOrderSQLResponse.status_name,
+      statusId: workOrderSQLResponse.status_id,
+      statusDescription: workOrderSQLResponse.status_description,
+      quantity: workOrderSQLResponse.quantity,
+      percentageOfTotal: workOrderSQLResponse.percentage_of_total,
+    };
+  }
+
+  static fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse(
+    workOrderSQLResponse: GetWorkOrderTypeStatisticsSqlResponse,
+  ): GetWorkOrderTypeStatisticsResponse {
+    return {
+      workType: workOrderSQLResponse.work_type,
+      workTypeId: workOrderSQLResponse.work_type_id,
+      quantity: workOrderSQLResponse.quantity,
+      completed: workOrderSQLResponse.completed,
+      completionRatePercentage: workOrderSQLResponse.completion_rate_percentage,
+    };
   }
 }
