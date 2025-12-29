@@ -11,6 +11,7 @@ import {
   ViewWorkOrderStatisticsResponse,
 } from '../schemas/dto/response/views.work-orders.response';
 import { WorkOrderResponse } from '../schemas/dto/response/work-order.response';
+import { WorkOrdersStatisticsKeyResponse } from '../schemas/dto/response/work_orders_statistics_key.response';
 import { WorkOrderModel } from '../schemas/models/work-order.model';
 
 export interface InterfaceWorkOrderRepository {
@@ -66,4 +67,6 @@ export interface InterfaceWorkOrderRepository {
     GetWorkOrderStatusStatisticsResponse[]
   >;
   getWorkOrderTypeStatistics(): Promise<GetWorkOrderTypeStatisticsResponse[]>;
+
+  getWorkOrdersStatisticsKey(): Promise<WorkOrdersStatisticsKeyResponse[]>;
 }

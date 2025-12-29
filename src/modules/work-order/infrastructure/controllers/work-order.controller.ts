@@ -114,4 +114,9 @@ export class WorkOrderController {
   async getWorkOrderTypeStatistics() {
     return this.workOrderService.getWorkOrderTypeStatistics();
   }
+
+  @MessagePattern('work-orders.get-work-orders-statistics-key')
+  async getWorkOrdersStatisticsKey() {
+    return this.workOrderService.getWorkOrdersStatisticsKey();
+  }
 }

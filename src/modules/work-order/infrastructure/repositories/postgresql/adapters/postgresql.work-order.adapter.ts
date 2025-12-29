@@ -11,6 +11,7 @@ import {
   ViewWorkOrderStatisticsResponse,
 } from '../../../../domain/schemas/dto/response/views.work-orders.response';
 import { WorkOrderResponse } from '../../../../domain/schemas/dto/response/work-order.response';
+import { WorkOrdersStatisticsKeyResponse } from '../../../../domain/schemas/dto/response/work_orders_statistics_key.response';
 import { GetWorkOrderPriorityStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_priority_statistics.sql.response';
 import { GetWorkOrderStatusStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_status_statistics.sql.response';
 import { GetWorkOrderTypeStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_type_statistics.sql.response';
@@ -24,6 +25,7 @@ import {
   ViewWorkOrderStatisticsSqlResponse,
 } from '../../../interfaces/sql/views.work-orders.sql.response';
 import { WorkOrderSQLResponse } from '../../../interfaces/sql/work-order.sql.response';
+import { WorkOrdersStatisticsKeySqlResponse } from '../../../interfaces/sql/work_orders_statistics_key.sql.response';
 
 export class WorkOrderAdapter {
   static fromWorkOrderSQLResponseToWorkOrderResponse(
@@ -222,6 +224,39 @@ export class WorkOrderAdapter {
       quantity: workOrderSQLResponse.quantity,
       completed: workOrderSQLResponse.completed,
       completionRatePercentage: workOrderSQLResponse.completion_rate_percentage,
+    };
+  }
+
+  static fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse(
+    sqlResponse: WorkOrdersStatisticsKeySqlResponse,
+  ): WorkOrdersStatisticsKeyResponse {
+    return {
+      totalOrders: sqlResponse.total_orders,
+      statusId: sqlResponse.status_id,
+      statusName: sqlResponse.status_name,
+      workTypeId: sqlResponse.work_type_id,
+      workType: sqlResponse.work_type,
+      departmentId: sqlResponse.department_id,
+      departmentName: sqlResponse.department_name,
+      emergency: sqlResponse.emergency,
+      urgent: sqlResponse.urgent,
+      high: sqlResponse.high,
+      medium: sqlResponse.medium,
+      low: sqlResponse.low,
+      criticalOrders: sqlResponse.critical_orders,
+      createdToday: sqlResponse.created_today,
+      createdLast7Days: sqlResponse.created_last_7_days,
+      createdThisMonth: sqlResponse.created_this_month,
+      closed: sqlResponse.closed,
+      completed: sqlResponse.completed,
+      avgHoursToComplete: sqlResponse.avg_hours_to_complete,
+      avgHoursToAssignment: sqlResponse.avg_hours_to_assignment,
+      avgHoursToExecution: sqlResponse.avg_hours_to_execution,
+      pctCompletedInGroup: sqlResponse.pct_completed_in_group,
+      pctPendingOrAssigned: sqlResponse.pct_pending_or_assigned,
+      totalMaterialCost: sqlResponse.total_material_cost,
+      avgWorkersPerOrder: sqlResponse.avg_workers_per_order,
+      totalWorkerAssignments: sqlResponse.total_worker_assignments,
     };
   }
 }

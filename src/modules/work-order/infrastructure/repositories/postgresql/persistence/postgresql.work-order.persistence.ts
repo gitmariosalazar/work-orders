@@ -34,6 +34,8 @@ import { GetWorkOrderTypeStatisticsResponse } from '../../../../domain/schemas/d
 import { GetWorkOrderStatusStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_status_statistics.sql.response';
 import { GetWorkOrderTypeStatisticsSqlResponse } from '../../../interfaces/sql/get_work_order_type_statistics.sql.response';
 import { GetWorkOrderStatusStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_status_statistics.response';
+import { WorkOrdersStatisticsKeyResponse } from '../../../../domain/schemas/dto/response/work_orders_statistics_key.response';
+import { WorkOrdersStatisticsKeySqlResponse } from '../../../interfaces/sql/work_orders_statistics_key.sql.response';
 
 @Injectable()
 export class PostgreSQLWorkOrderPersistence
@@ -717,6 +719,35 @@ export class PostgreSQLWorkOrderPersistence
         WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse,
       );
       return statistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrdersStatisticsKey(): Promise<
+    WorkOrdersStatisticsKeyResponse[]
+  > {
+    try {
+      const query = `
+        select * from work_orders.view_work_order_key_statistics;
+      `;
+
+      const result =
+        await this.postgreSqlService.query<WorkOrdersStatisticsKeySqlResponse>(
+          query,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders statistics key found',
+        });
+      }
+
+      const statisticsKey: WorkOrdersStatisticsKeyResponse[] = result.map(
+        WorkOrderAdapter.fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse,
+      );
+      return statisticsKey;
     } catch (error) {
       throw error;
     }

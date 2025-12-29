@@ -21,6 +21,7 @@ import {
 import { GetWorkOrderPriorityStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_priority_statistics.response';
 import { GetWorkOrderStatusStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_status_statistics.response';
 import { GetWorkOrderTypeStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_type_statistics.response';
+import { WorkOrdersStatisticsKeyResponse } from '../../domain/schemas/dto/response/work_orders_statistics_key.response';
 
 @Injectable()
 export class WorkOrderService implements InterfaceWorkOrderUseCase {
@@ -432,6 +433,26 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
       }
 
       return typeStatistics;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getWorkOrdersStatisticsKey(): Promise<
+    WorkOrdersStatisticsKeyResponse[]
+  > {
+    try {
+      const statisticsKey =
+        await this.workOrderRepository.getWorkOrdersStatisticsKey();
+
+      if (statisticsKey.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders statistics key found',
+        });
+      }
+
+      return statisticsKey;
     } catch (error) {
       throw error;
     }
