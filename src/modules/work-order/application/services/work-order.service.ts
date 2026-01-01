@@ -178,9 +178,9 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
     }
   }
 
-  async getAllWorkOrders(): Promise<WorkOrderResponse[]> {
+  async getAllWorkOrders(limit?: number, offset?: number): Promise<WorkOrderResponse[]> {
     try {
-      const workOrders = await this.workOrderRepository.getAllWorkOrders();
+      const workOrders = await this.workOrderRepository.getAllWorkOrders(limit, offset);
 
       if (workOrders.length === 0) {
         throw new RpcException({

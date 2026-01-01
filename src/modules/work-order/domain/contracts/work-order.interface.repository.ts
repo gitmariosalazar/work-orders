@@ -24,7 +24,7 @@ export interface InterfaceWorkOrderRepository {
   ): Promise<WorkOrderResponse | null>;
   getWorkOrderById(orderCode: string): Promise<WorkOrderResponse | null>;
   getWorkOrdersByClientId(clientId: string): Promise<WorkOrderResponse[]>;
-  getAllWorkOrders(): Promise<WorkOrderResponse[]>;
+  getAllWorkOrders(limit?: number, offset?: number): Promise<WorkOrderResponse[]>;
 
   // Views
   getWorkOrderStatistics(

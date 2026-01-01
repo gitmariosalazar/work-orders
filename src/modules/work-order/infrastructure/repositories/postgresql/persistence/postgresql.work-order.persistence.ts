@@ -296,8 +296,11 @@ export class PostgreSQLWorkOrderPersistence
     }
   }
 
-  async getAllWorkOrders(): Promise<WorkOrderResponse[]> {
+  async getAllWorkOrders(limit?:number, offset?:number): Promise<WorkOrderResponse[]> {
     try {
+
+      const paramsQuery: any[] = [limit, offset];
+
       const query = `
         SELECT 
           id_orden_trabajo::TEXT AS work_order_id,
@@ -318,11 +321,13 @@ export class PostgreSQLWorkOrderPersistence
           metadata::TEXT AS metadata,              -- JSON como string
           clave_catastral AS cadastral_key,
           is_deleted
-        FROM work_orders.orden_trabajo ORDER BY fecha_creacion DESC;
+        FROM work_orders.orden_trabajo ORDER BY fecha_creacion DESC
+        LIMIT $1 OFFSET $2;
+        ;
       `;
 
       const result =
-        await this.postgreSqlService.query<WorkOrderSQLResponse>(query);
+        await this.postgreSqlService.query<WorkOrderSQLResponse>(query, paramsQuery);
 
       if (result.length === 0) {
         return [];

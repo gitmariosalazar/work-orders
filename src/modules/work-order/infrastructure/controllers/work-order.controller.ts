@@ -33,8 +33,11 @@ export class WorkOrderController {
   }
 
   @MessagePattern('work-orders.get-all-work-orders')
-  async getAllWorkOrders() {
-    return this.workOrderService.getAllWorkOrders();
+  async getAllWorkOrders(
+    @Payload() data: { limit?: number; offset?: number },
+  ) {
+    const { limit, offset } = data;
+    return this.workOrderService.getAllWorkOrders(limit, offset);
   }
 
   @MessagePattern('work-orders.get-all-work-orders-full-details')
