@@ -16,11 +16,12 @@ async function bootstrap() {
   const httpApp = await NestFactory.create(AppModule);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   httpApp.use(morgan('dev'));
-
+  /*
   await httpApp.listen(environments.NODE_ENV === 'production' ? 3014 : 4014);
   logger.log(
     `HTTP API listening on port ${environments.NODE_ENV === 'production' ? 3014 : 4014}`,
   );
+  */
 
   // Database connection for the HTTP part (you can also inject it, but this is quick)
   const dbService = httpApp.get(DatabaseServicePostgreSQL);
@@ -49,9 +50,7 @@ async function bootstrap() {
   );
 
   await kafkaApp.listen();
-  logger.log(
-    `Kafka consumer "${environments.WORK_ORDERS_KAFKA_GROUP_ID}" is running and listening to topics`,
-  );
+  logger.log(`Nest application successfully started`);
 }
 
 void bootstrap();
