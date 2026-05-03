@@ -16,8 +16,8 @@ async function bootstrap() {
   const httpApp = await NestFactory.create(AppModule);
   // eslint-disable-next-line @typescript-eslint/no-unsafe-call
   httpApp.use(morgan('dev'));
-  /*
   await httpApp.listen(environments.NODE_ENV === 'production' ? 3014 : 4014);
+  /*
   logger.log(
     `HTTP API listening on port ${environments.NODE_ENV === 'production' ? 3014 : 4014}`,
   );
