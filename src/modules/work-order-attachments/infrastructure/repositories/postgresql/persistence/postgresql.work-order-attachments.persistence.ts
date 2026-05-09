@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkOrderAttachmentsRepository } from '../../../../domain/contracts/work-order-attachments.interface.repository';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkOrderAttachmentsResponse } from '../../../../domain/schemas/dto/response/work-order-attachments.response';
 import { WorkOrderAttachmentsSqlResponse } from '../../../interfaces/sql/work-order-attachments.sql.response';
 import { WorkOrderAttachmentAdapter } from '../adapters/work-order-attachments.adapter';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkOrderAttachmentModel } from '../../../../domain/schemas/models/work-order-attachments.model';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgresqlWorkOrderAttachmentsPersistence
   implements InterfaceWorkOrderAttachmentsRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async findAllAttachments(
     limit?: number,
@@ -32,17 +32,14 @@ export class PostgresqlWorkOrderAttachmentsPersistence
 
       const params = [limit || 100, offset || 0];
       const result =
-        await this.postgreSqlService.query<WorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
           params,
         );
 
-      const responses: WorkOrderAttachmentsResponse[] =
-        WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
           result,
         );
-
-      return responses;
     } catch (error) {
       throw error;
     }
@@ -66,7 +63,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence
 
       const params = [attachmentId];
       const result =
-        await this.postgreSqlService.query<WorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
           params,
         );
@@ -78,12 +75,9 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         });
       }
 
-      const response: WorkOrderAttachmentsResponse =
-        WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
           result[0],
         );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -97,9 +91,9 @@ export class PostgresqlWorkOrderAttachmentsPersistence
       `;
 
       const params = [attachmentId];
-      const result = await this.postgreSqlService.query<boolean>(query, params);
+      const result = await this.databaseService.execute(query, params);
 
-      return result[0];
+      return result.affectedRows > 0;
     } catch (error) {
       throw error;
     }
@@ -130,7 +124,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         attachment.uploadDate,
       ];
       const result =
-        await this.postgreSqlService.query<WorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
           params,
         );
@@ -142,12 +136,9 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         });
       }
 
-      const response: WorkOrderAttachmentsResponse =
-        WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
           result[0],
         );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -184,7 +175,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         attachmentId,
       ];
       const result =
-        await this.postgreSqlService.query<WorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
           params,
         );
@@ -196,12 +187,9 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         });
       }
 
-      const response: WorkOrderAttachmentsResponse =
-        WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
           result[0],
         );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -225,17 +213,14 @@ export class PostgresqlWorkOrderAttachmentsPersistence
 
       const params = [workOrderId];
       const result =
-        await this.postgreSqlService.query<WorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
           params,
         );
 
-      const responses: WorkOrderAttachmentsResponse[] =
-        WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
           result,
         );
-
-      return responses;
     } catch (error) {
       throw error;
     }

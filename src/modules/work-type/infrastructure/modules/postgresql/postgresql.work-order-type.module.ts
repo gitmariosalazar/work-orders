@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { WorkTypeController } from '../../controllers/work-type.controller';
-import { DatabaseServicePostgreSQL } from '../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkTypeService } from '../../../application/services/work-type.service';
-import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.module';
 import { PostgreSQLWorkTypePersistence } from '../../repositories/postgresql/repositories/postgresql.work-type.persistence';
+import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.module';
+import { DatabasePersistenceModule } from '../../../../../shared/connections/database/database-persistence.module';
 
 @Module({
-  imports: [KafkaServiceModule],
+  imports: [KafkaServiceModule, DatabasePersistenceModule],
   controllers: [WorkTypeController],
   providers: [
-    DatabaseServicePostgreSQL,
     WorkTypeService,
     {
       provide: 'WorkTypeRepository',
@@ -18,4 +17,4 @@ import { PostgreSQLWorkTypePersistence } from '../../repositories/postgresql/rep
   ],
   exports: [],
 })
-export class PostgreSQLWorkTypeModule {}
+export class PostgreSqlWorkOrderTypeModule {}

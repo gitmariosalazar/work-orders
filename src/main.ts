@@ -5,7 +5,7 @@ import { Logger } from '@nestjs/common';
 import { Transport, MicroserviceOptions } from '@nestjs/microservices';
 import { environments } from './settings/environments/environments';
 import * as morgan from 'morgan';
-import { DatabaseServicePostgreSQL } from './shared/connections/database/postgresql/postgresql.service';
+import { DatabaseAbstract } from './shared/connections/database/abstract/abstract.database';
 
 async function bootstrap() {
   const logger = new Logger('WorkOrdersBootstrap');
@@ -24,7 +24,7 @@ async function bootstrap() {
   */
 
   // Database connection for the HTTP part (you can also inject it, but this is quick)
-  const dbService = httpApp.get(DatabaseServicePostgreSQL);
+  const dbService = httpApp.get(DatabaseAbstract);
   logger.log(await dbService.connect());
 
   // ==============================================

@@ -1,6 +1,5 @@
 /* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { InterfaceWorkOrderObservationRepository } from '../../../../domain/contracts/work-order-observation.interface.repository';
 import { WorkOrderObservationResponse } from '../../../../domain/schemas/dto/response/work-order-observation.response';
 import { WorkOrderObservationModel } from '../../../../domain/schemas/models/work-order-observation.model';
@@ -8,12 +7,13 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkOrderObservationAdapter } from '../adapters/work-order-observation.adapter';
 import { WorkOrderObservationSQLResponse } from '../../../interfaces/sql/work-order-observation.sql.response';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgreSqlWorkOrderObservationPersistence
   implements InterfaceWorkOrderObservationRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async create(
     workOrderObservation: WorkOrderObservationModel,
@@ -23,7 +23,7 @@ export class PostgreSqlWorkOrderObservationPersistence
         SELECT 1 FROM work_orders.orden_trabajo WHERE id_orden_trabajo = $1;
       `;
       const verifyWorkOrderParams = [workOrderObservation.getWorkOrderId()];
-      const workOrderExists = await this.postgreSqlService.query<{
+      const workOrderExists = await this.databaseService.query<{
         exists: number;
       }>(verifyWorkOrderQuery, verifyWorkOrderParams);
 
@@ -43,7 +43,7 @@ export class PostgreSqlWorkOrderObservationPersistence
         workOrderObservation.getWorkerId(),
       ];
       const result =
-        await this.postgreSqlService.query<WorkOrderObservationSQLResponse>(
+        await this.databaseService.query<WorkOrderObservationSQLResponse>(
           insertObservationQuery,
           insertObservationParams,
         );
@@ -69,24 +69,13 @@ export class PostgreSqlWorkOrderObservationPersistence
     workOrderObservation: Partial<WorkOrderObservationModel>,
   ): Promise<WorkOrderObservationResponse | null> {
     try {
-      console.log(
-        'Updating work order observation with ID:',
-        workOrderObservationId,
-        workOrderObservation,
-        workOrderObservation.getWorkOrderId?.(),
-      );
-      console.log(
-        'Work order ID to verify:',
-        workOrderObservation.getWorkOrderId?.() ?? null,
-        workOrderObservation,
-      );
       const verifyWorkOrderQuery: string = `
         SELECT 1 FROM work_orders.orden_trabajo WHERE id_orden_trabajo = $1;
       `;
       const verifyWorkOrderParams = [
         workOrderObservation.getWorkOrderId?.() ?? null,
       ];
-      const workOrderExists = await this.postgreSqlService.query<{
+      const workOrderExists = await this.databaseService.query<{
         exists: number;
       }>(verifyWorkOrderQuery, verifyWorkOrderParams);
       if (workOrderExists.length === 0) {
@@ -113,7 +102,7 @@ export class PostgreSqlWorkOrderObservationPersistence
       ];
 
       const result =
-        await this.postgreSqlService.query<WorkOrderObservationSQLResponse>(
+        await this.databaseService.query<WorkOrderObservationSQLResponse>(
           query,
           params,
         );
@@ -147,20 +136,12 @@ export class PostgreSqlWorkOrderObservationPersistence
       const params = [workOrderId];
 
       const result =
-        await this.postgreSqlService.query<WorkOrderObservationSQLResponse>(
+        await this.databaseService.query<WorkOrderObservationSQLResponse>(
           query,
           params,
         );
 
-      if (result.length === 0) {
-        return [];
-      }
-
-      const workOrderObservations: WorkOrderObservationResponse[] = result.map(
-        (record) => WorkOrderObservationAdapter.toResponse(record),
-      );
-
-      return workOrderObservations;
+      return result.map((record) => WorkOrderObservationAdapter.toResponse(record));
     } catch (error) {
       throw error;
     }
@@ -179,7 +160,7 @@ export class PostgreSqlWorkOrderObservationPersistence
       const params = [workOrderObservationId];
 
       const result =
-        await this.postgreSqlService.query<WorkOrderObservationSQLResponse>(
+        await this.databaseService.query<WorkOrderObservationSQLResponse>(
           query,
           params,
         );
@@ -205,20 +186,12 @@ export class PostgreSqlWorkOrderObservationPersistence
       `;
 
       const result =
-        await this.postgreSqlService.query<WorkOrderObservationSQLResponse>(
+        await this.databaseService.query<WorkOrderObservationSQLResponse>(
           query,
           [],
         );
 
-      if (result.length === 0) {
-        return [];
-      }
-
-      const workOrderObservations: WorkOrderObservationResponse[] = result.map(
-        (record) => WorkOrderObservationAdapter.toResponse(record),
-      );
-
-      return workOrderObservations;
+      return result.map((record) => WorkOrderObservationAdapter.toResponse(record));
     } catch (error) {
       throw error;
     }

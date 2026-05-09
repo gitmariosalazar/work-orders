@@ -1,15 +1,14 @@
 import { Module } from '@nestjs/common';
 import { WorkOrderHistoryController } from '../../controllers/work-order-history.controller';
-import { DatabaseServicePostgreSQL } from '../../../../../shared/connections/database/postgresql/postgresql.service';
-import { PostgresqlWorkOrderHistoryPersistence } from '../../repositories/postgresql/persistence/postgresql.work-order-history.persistence';
 import { WorkOrderHistoryService } from '../../../application/services/work-order-history.service';
+import { PostgresqlWorkOrderHistoryPersistence } from '../../repositories/postgresql/persistence/postgresql.work-order-history.persistence';
 import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.module';
+import { DatabasePersistenceModule } from '../../../../../shared/connections/database/database-persistence.module';
 
 @Module({
-  imports: [KafkaServiceModule],
+  imports: [KafkaServiceModule, DatabasePersistenceModule],
   controllers: [WorkOrderHistoryController],
   providers: [
-    DatabaseServicePostgreSQL,
     WorkOrderHistoryService,
     {
       provide: 'WorkOrderHistoryRepository',
@@ -18,4 +17,4 @@ import { KafkaServiceModule } from '../../../../../shared/kafka/kafka-service.mo
   ],
   exports: [],
 })
-export class PostgresqlWorkOrderHistoryModule {}
+export class PostgreSqlWorkOrderHistoryModule {}

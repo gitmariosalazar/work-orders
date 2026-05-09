@@ -2,7 +2,6 @@
 /* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkOrderRepository } from '../../../../domain/contracts/work-order.interface.repository';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkOrderResponse } from '../../../../domain/schemas/dto/response/work-order.response';
 import { WorkOrderModel } from '../../../../domain/schemas/models/work-order.model';
 import { RpcException } from '@nestjs/microservices';
@@ -36,12 +35,13 @@ import { GetWorkOrderTypeStatisticsSqlResponse } from '../../../interfaces/sql/g
 import { GetWorkOrderStatusStatisticsResponse } from '../../../../domain/schemas/dto/response/get_work_order_status_statistics.response';
 import { WorkOrdersStatisticsKeyResponse } from '../../../../domain/schemas/dto/response/work_orders_statistics_key.response';
 import { WorkOrdersStatisticsKeySqlResponse } from '../../../interfaces/sql/work_orders_statistics_key.sql.response';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgreSQLWorkOrderPersistence
   implements InterfaceWorkOrderRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async createWorkOrder(
     workOrder: WorkOrderModel,
@@ -60,16 +60,16 @@ export class PostgreSQLWorkOrderPersistence
             metadata,
             clave_catastral
         ) VALUES (
-            $1,  -- id_tipo_trabajo (BIGINT)
-            $2,  -- id_prioridad (BIGINT)
-            $3,   -- estado (INT, por defecto 0 - pendiente)
-            $4,  -- id_cliente (BIGINT)
-            $5,  -- descripcion (TEXT, opcional)
-            $6,  -- ubicacion (VARCHAR, opcional)
-            $7,  -- usuario_creacion (BIGINT, opcional)
-            work_orders.ST_SetSRID(work_orders.ST_MakePoint($8, $9), 4326),  -- lng, lat → coordenadas
-            $10,  -- metadata (JSONB, opcional)
-            $11  -- clave_catastral (VARCHAR, opcional)
+            $1,
+            $2,
+            $3,
+            $4,
+            $5,
+            $6,
+            $7,
+            work_orders.ST_SetSRID(work_orders.ST_MakePoint($8, $9), 4326),
+            $10,
+            $11
         )
         RETURNING 
             id_orden_trabajo::TEXT AS work_order_id,
@@ -86,8 +86,8 @@ export class PostgreSQLWorkOrderPersistence
             usuario_creacion::TEXT AS created_user_id,
             usuario_asignacion::TEXT AS assigned_user_id,
             usuario_completacion::TEXT AS completed_user_id,
-            coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
-            metadata::TEXT AS metadata,              -- JSON como string
+            coordenadas AS coordinates,
+            metadata::TEXT AS metadata,
             clave_catastral AS cadastral_key,
             is_deleted;
       `;
@@ -99,7 +99,6 @@ export class PostgreSQLWorkOrderPersistence
         toNull(workOrder.getDescription()),
         toNull(workOrder.getLocation()),
         toNull(workOrder.getCreatedUserId()),
-        // coordenadas
         toNull(
           parseFloat(
             workOrder.getCoordinates()?.split('(')[1]?.split(' ')?.[0] ?? '',
@@ -114,7 +113,7 @@ export class PostgreSQLWorkOrderPersistence
         toNull(workOrder.getCadastralKey()),
       ];
 
-      const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
+      const result = await this.databaseService.query<WorkOrderSQLResponse>(
         query,
         values,
       );
@@ -167,8 +166,8 @@ export class PostgreSQLWorkOrderPersistence
             usuario_creacion::TEXT AS created_user_id,
             usuario_asignacion::TEXT AS assigned_user_id,
             usuario_completacion::TEXT AS completed_user_id,
-            coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
-            metadata::TEXT AS metadata,              -- JSON como string
+            coordenadas AS coordinates,
+            metadata::TEXT AS metadata,
             clave_catastral AS cadastral_key,
             is_deleted;
       `;
@@ -186,7 +185,7 @@ export class PostgreSQLWorkOrderPersistence
         orderCode,
       ];
 
-      const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
+      const result = await this.databaseService.query<WorkOrderSQLResponse>(
         query,
         values,
       );
@@ -225,8 +224,8 @@ export class PostgreSQLWorkOrderPersistence
           usuario_creacion::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
-          metadata::TEXT AS metadata,              -- JSON como string
+          coordenadas AS coordinates,
+          metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
         FROM work_orders.orden_trabajo
@@ -234,19 +233,14 @@ export class PostgreSQLWorkOrderPersistence
       `;
       const values = [clientId];
 
-      const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
+      const result = await this.databaseService.query<WorkOrderSQLResponse>(
         query,
         values,
       );
 
-      if (result.length === 0) {
-        return [];
-      }
-
-      const workOrders: WorkOrderResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse(item),
       );
-      return workOrders;
     } catch (error) {
       throw error;
     }
@@ -270,8 +264,8 @@ export class PostgreSQLWorkOrderPersistence
           usuario_creacion::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
-          metadata::TEXT AS metadata,              -- JSON como string
+          coordenadas AS coordinates,
+          metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
         FROM work_orders.orden_trabajo
@@ -279,7 +273,7 @@ export class PostgreSQLWorkOrderPersistence
       `;
       const values = [orderCode];
 
-      const result = await this.postgreSqlService.query<WorkOrderSQLResponse>(
+      const result = await this.databaseService.query<WorkOrderSQLResponse>(
         query,
         values,
       );
@@ -298,7 +292,6 @@ export class PostgreSQLWorkOrderPersistence
 
   async getAllWorkOrders(limit?:number, offset?:number): Promise<WorkOrderResponse[]> {
     try {
-
       const paramsQuery: any[] = [limit, offset];
 
       const query = `
@@ -317,26 +310,20 @@ export class PostgreSQLWorkOrderPersistence
           usuario_creacion::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,   -- devuelve 'POINT(lng lat)'
-          metadata::TEXT AS metadata,              -- JSON como string
+          coordenadas AS coordinates,
+          metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
         FROM work_orders.orden_trabajo ORDER BY fecha_creacion DESC
         LIMIT $1 OFFSET $2;
-        ;
       `;
 
       const result =
-        await this.postgreSqlService.query<WorkOrderSQLResponse>(query, paramsQuery);
+        await this.databaseService.query<WorkOrderSQLResponse>(query, paramsQuery);
 
-      if (result.length === 0) {
-        return [];
-      }
-
-      const workOrders: WorkOrderResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse(item),
       );
-      return workOrders;
     } catch (error) {
       throw error;
     }
@@ -354,7 +341,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrderStatisticsSqlResponse>(
+        await this.databaseService.query<ViewWorkOrderStatisticsSqlResponse>(
           query,
           values,
         );
@@ -366,10 +353,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const statistics: ViewWorkOrderStatisticsResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderStattisticsSQLResponseToWorkOrderStatisticsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderStattisticsSQLResponseToWorkOrderStatisticsResponse(item),
       );
-      return statistics;
     } catch (error) {
       throw error;
     }
@@ -387,7 +373,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrderAssignmentsSqlResponse>(
+        await this.databaseService.query<ViewWorkOrderAssignmentsSqlResponse>(
           query,
           values,
         );
@@ -399,10 +385,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const assignments: ViewWorkOrderAssignmentsResponse[] = result.map(
-        WorkOrderAdapter.fromViewWorkOrderAssignmentsSqlResponseToViewWorkOrderAssignmentsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewWorkOrderAssignmentsSqlResponseToViewWorkOrderAssignmentsResponse(item),
       );
-      return assignments;
     } catch (error) {
       throw error;
     }
@@ -420,7 +405,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrderMaterialsSqlResponse>(
+        await this.databaseService.query<ViewWorkOrderMaterialsSqlResponse>(
           query,
           values,
         );
@@ -432,10 +417,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const materials: ViewWorkOrderMaterialsResponse[] = result.map(
-        WorkOrderAdapter.fromViewWorkOrderMaterialsSqlResponseToViewWorkOrderMaterialsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewWorkOrderMaterialsSqlResponseToViewWorkOrderMaterialsResponse(item),
       );
-      return materials;
     } catch (error) {
       throw error;
     }
@@ -453,7 +437,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrderAttachmentsSqlResponse>(
+        await this.databaseService.query<ViewWorkOrderAttachmentsSqlResponse>(
           query,
           values,
         );
@@ -465,10 +449,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const attachments: ViewWorkOrderAttachmentsResponse[] = result.map(
-        WorkOrderAdapter.fromViewWorkOrderAttachmentsSqlResponseToViewWorkOrderAttachmentsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewWorkOrderAttachmentsSqlResponseToViewWorkOrderAttachmentsResponse(item),
       );
-      return attachments;
     } catch (error) {
       throw error;
     }
@@ -486,7 +469,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrderObservationsSqlResponse>(
+        await this.databaseService.query<ViewWorkOrderObservationsSqlResponse>(
           query,
           values,
         );
@@ -498,10 +481,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const observations: ViewWorkOrderObservationsResponse[] = result.map(
-        WorkOrderAdapter.fromViewWorkOrderObservationsSqlResponseToViewWorkOrderObservationsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewWorkOrderObservationsSqlResponseToViewWorkOrderObservationsResponse(item),
       );
-      return observations;
     } catch (error) {
       throw error;
     }
@@ -519,7 +501,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewWorkOrdersByClientSqlResponse>(
+        await this.databaseService.query<ViewWorkOrdersByClientSqlResponse>(
           query,
           values,
         );
@@ -531,10 +513,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const ordersByClient: ViewWorkOrdersByClientResponse[] = result.map(
-        WorkOrderAdapter.fromViewWorkOrdersByClientSqlResponseToViewWorkOrdersByClientResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewWorkOrdersByClientSqlResponseToViewWorkOrdersByClientResponse(item),
       );
-      return ordersByClient;
     } catch (error) {
       throw error;
     }
@@ -552,7 +533,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [toNull(limit), toNull(offset)];
 
       const result =
-        await this.postgreSqlService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
+        await this.databaseService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
           query,
           values,
         );
@@ -564,10 +545,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const fullDetails: ViewAllWorkOrdersFullDetailsResponse[] = result.map(
-        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(item),
       );
-      return fullDetails;
     } catch (error) {
       throw error;
     }
@@ -584,7 +564,7 @@ export class PostgreSQLWorkOrderPersistence
       const values = [orderCode];
 
       const result =
-        await this.postgreSqlService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
+        await this.databaseService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
           query,
           values,
         );
@@ -596,11 +576,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const fullDetails: ViewAllWorkOrdersFullDetailsResponse =
-        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
-          result[0],
-        );
-      return fullDetails;
+      return WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -631,7 +609,7 @@ export class PostgreSQLWorkOrderPersistence
       `;
 
       const result =
-        await this.postgreSqlService.query<GetWorkOrderPriorityStatisticsSqlResponse>(
+        await this.databaseService.query<GetWorkOrderPriorityStatisticsSqlResponse>(
           query,
         );
 
@@ -642,10 +620,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const statistics: GetWorkOrderPriorityStatisticsResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse(item),
       );
-      return statistics;
     } catch (error) {
       throw error;
     }
@@ -670,7 +647,7 @@ export class PostgreSQLWorkOrderPersistence
       `;
 
       const result =
-        await this.postgreSqlService.query<GetWorkOrderTypeStatisticsSqlResponse>(
+        await this.databaseService.query<GetWorkOrderTypeStatisticsSqlResponse>(
           query,
         );
 
@@ -681,10 +658,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const statistics: GetWorkOrderTypeStatisticsResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse(item),
       );
-      return statistics;
     } catch (error) {
       throw error;
     }
@@ -709,7 +685,7 @@ export class PostgreSQLWorkOrderPersistence
       `;
 
       const result =
-        await this.postgreSqlService.query<GetWorkOrderStatusStatisticsSqlResponse>(
+        await this.databaseService.query<GetWorkOrderStatusStatisticsSqlResponse>(
           query,
         );
 
@@ -720,10 +696,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const statistics: GetWorkOrderStatusStatisticsResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse(item),
       );
-      return statistics;
     } catch (error) {
       throw error;
     }
@@ -738,7 +713,7 @@ export class PostgreSQLWorkOrderPersistence
       `;
 
       const result =
-        await this.postgreSqlService.query<WorkOrdersStatisticsKeySqlResponse>(
+        await this.databaseService.query<WorkOrdersStatisticsKeySqlResponse>(
           query,
         );
 
@@ -749,10 +724,9 @@ export class PostgreSQLWorkOrderPersistence
         });
       }
 
-      const statisticsKey: WorkOrdersStatisticsKeyResponse[] = result.map(
-        WorkOrderAdapter.fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse,
+      return result.map((item) =>
+        WorkOrderAdapter.fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse(item),
       );
-      return statisticsKey;
     } catch (error) {
       throw error;
     }

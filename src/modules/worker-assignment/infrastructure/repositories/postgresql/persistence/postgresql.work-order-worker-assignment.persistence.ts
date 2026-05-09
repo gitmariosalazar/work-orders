@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { InterfaceWorkOrderWorkerAssignmentRepository } from '../../../../domain/contracts/work_order_worker_assignment.interface.repository';
 import { WorkOrderWorkerAssignmentResponse } from '../../../../domain/schemas/dto/response/work-order-worker-assignment.response';
 import { WorkOrderWorkerAssignmentModel } from '../../../../domain/schemas/models/work-order-worker-assignment.model';
@@ -7,12 +6,13 @@ import { WorkOrderWorkerAssignmentSqlResponse } from '../../../interfaces/sql/wo
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkOrderWorkerAssignmentAdapter } from '../adapters/postgresql.work-order-worker-assignment.adapters';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgresqlWorkOrderWorkerAssignmentPersistence
   implements InterfaceWorkOrderWorkerAssignmentRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async addWorkerAssignmentToWorkOrderList(
     workerAssignmentList: WorkOrderWorkerAssignmentModel[],
@@ -30,7 +30,7 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
           assignment.getRolId(),
         ];
         const res: WorkOrderWorkerAssignmentSqlResponse[] =
-          await this.postgreSqlService.query<WorkOrderWorkerAssignmentSqlResponse>(
+          await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(
             query,
             values,
           );
@@ -44,12 +44,9 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
         });
       }
 
-      const response: WorkOrderWorkerAssignmentResponse[] =
-        WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
+      return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
           results,
         );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -67,7 +64,7 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
       const values = [workerId];
 
       const result: WorkOrderWorkerAssignmentSqlResponse[] =
-        await this.postgreSqlService.query<WorkOrderWorkerAssignmentSqlResponse>(
+        await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(
           query,
           values,
         );
@@ -76,12 +73,9 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
         return null;
       }
 
-      const response: WorkOrderWorkerAssignmentResponse =
-        WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseToWorkOrderWorkerAssignmentResponse(
+      return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseToWorkOrderWorkerAssignmentResponse(
           result[0],
         );
-
-      return response;
     } catch (error) {
       throw error;
     }
@@ -99,7 +93,7 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
       const values = [workOrderId];
 
       const results: WorkOrderWorkerAssignmentSqlResponse[] =
-        await this.postgreSqlService.query<WorkOrderWorkerAssignmentSqlResponse>(
+        await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(
           query,
           values,
         );
@@ -111,12 +105,9 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
         });
       }
 
-      const response: WorkOrderWorkerAssignmentResponse[] =
-        WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
+      return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
           results,
         );
-
-      return response;
     } catch (error) {
       throw error;
     }

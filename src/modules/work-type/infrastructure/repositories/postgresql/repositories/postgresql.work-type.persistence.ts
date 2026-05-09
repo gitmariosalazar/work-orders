@@ -1,38 +1,32 @@
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkTypeRepository } from '../../../../domain/contracts/work-type.interface.repository';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { WorkTypeResponse } from '../../../../domain/schemas/dto/response/work-type.response';
 import { WorkTypeAdapter } from '../adapters/postgresql.work-type.adapter';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkTypeModel } from '../../../../domain/schemas/models/work-type.model';
 import { WorkTypeSqlResponse } from '../../../interfaces/sql/work-type.sql.response';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class PostgreSQLWorkTypePersistence
   implements InterfaceWorkTypeRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async getAllWorkTypes(): Promise<WorkTypeResponse[]> {
     try {
       const query =
         'select t.id_tipo_trabajo as work_type_id, t.nombre as name, t.descripcion as description, t.id_departamento as department_id from work_orders.tipo_trabajo t';
 
-      const result = await this.postgreSqlService.query<WorkTypeSqlResponse>(
+      const result = await this.databaseService.query<WorkTypeSqlResponse>(
         query,
         [],
       );
 
-      const workTypes: WorkTypeResponse[] = result.map(
-        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse,
+      return result.map((item) =>
+        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(item),
       );
-
-      if (workTypes.length === 0) {
-        return [];
-      }
-
-      return workTypes;
     } catch (error) {
       throw error;
     }
@@ -45,7 +39,7 @@ export class PostgreSQLWorkTypePersistence
 
       const values = [workTypeName];
 
-      const result = await this.postgreSqlService.query<{ exists: boolean }>(
+      const result = await this.databaseService.query<{ exists: boolean }>(
         query,
         values,
       );
@@ -63,7 +57,7 @@ export class PostgreSQLWorkTypePersistence
 
       const values = [workTypeId];
 
-      const result = await this.postgreSqlService.query<WorkTypeSqlResponse>(
+      const result = await this.databaseService.query<WorkTypeSqlResponse>(
         query,
         values,
       );
@@ -71,14 +65,11 @@ export class PostgreSQLWorkTypePersistence
       if (result.length === 0) {
         throw new RpcException({
           statusCode: statusCode.NOT_FOUND,
-          message: `Work  Type with ID '${workTypeId}' not found.`,
+          message: `Work Type with ID '${workTypeId}' not found.`,
         });
       }
 
-      const workType: WorkTypeResponse =
-        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
-
-      return workType;
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
     } catch (error) {
       throw error;
     }
@@ -88,7 +79,6 @@ export class PostgreSQLWorkTypePersistence
     workType: WorkTypeModel,
   ): Promise<WorkTypeResponse | null> {
     try {
-      console.log('Creating Work Type:', workType);
       const query =
         'insert into work_orders.tipo_trabajo (nombre, descripcion, id_departamento) values ($1, $2, $3) returning id_tipo_trabajo as work_type_id, nombre as name, descripcion as description, id_departamento as department_id;';
 
@@ -98,7 +88,7 @@ export class PostgreSQLWorkTypePersistence
         workType.getDepartmentId(),
       ];
 
-      const result = await this.postgreSqlService.query<WorkTypeSqlResponse>(
+      const result = await this.databaseService.query<WorkTypeSqlResponse>(
         query,
         values,
       );
@@ -106,14 +96,11 @@ export class PostgreSQLWorkTypePersistence
       if (result.length === 0) {
         throw new RpcException({
           statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to create Work  Type',
+          message: 'Failed to create Work Type',
         });
       }
 
-      const createdWorkType: WorkTypeResponse =
-        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
-
-      return createdWorkType;
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
     } catch (error) {
       throw error;
     }
@@ -133,7 +120,7 @@ export class PostgreSQLWorkTypePersistence
         workTypeId,
       ];
 
-      const result = await this.postgreSqlService.query<WorkTypeSqlResponse>(
+      const result = await this.databaseService.query<WorkTypeSqlResponse>(
         query,
         values,
       );
@@ -141,14 +128,11 @@ export class PostgreSQLWorkTypePersistence
       if (result.length === 0) {
         throw new RpcException({
           statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to update Work  Type',
+          message: 'Failed to update Work Type',
         });
       }
 
-      const updatedWorkType: WorkTypeResponse =
-        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
-
-      return updatedWorkType;
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
     } catch (error) {
       throw error;
     }
@@ -163,20 +147,14 @@ export class PostgreSQLWorkTypePersistence
 
       const values = [departmentId];
 
-      const result = await this.postgreSqlService.query<WorkTypeSqlResponse>(
+      const result = await this.databaseService.query<WorkTypeSqlResponse>(
         query,
         values,
       );
 
-      const workTypes: WorkTypeResponse[] = result.map(
-        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse,
+      return result.map((item) =>
+        WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(item),
       );
-
-      if (workTypes.length === 0) {
-        return [];
-      }
-
-      return workTypes;
     } catch (error) {
       throw error;
     }

@@ -30,6 +30,7 @@ interface EnvironmentsVariables {
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT_ID: string;
   WORK_ORDER_OBSERVATION_KAFKA_GROUP_ID: string;
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT: string;
+  DATABASE_TYPE: 'mysql' | 'postgres';
 }
 
 const environmentsSchema = Joi.object<EnvironmentsVariables>({
@@ -63,6 +64,7 @@ const environmentsSchema = Joi.object<EnvironmentsVariables>({
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT_ID: Joi.string().required(),
   WORK_ORDER_OBSERVATION_KAFKA_GROUP_ID: Joi.string().required(),
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT: Joi.string().required(),
+  DATABASE_TYPE: Joi.string().valid('mysql', 'postgres').default('postgres'),
 }).unknown(true);
 
 const { error, value: envVars } = environmentsSchema.validate(process.env);
@@ -100,4 +102,5 @@ export const environments: EnvironmentsVariables = {
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT_ID: envVars.WORK_ORDER_OBSERVATION_KAFKA_CLIENT_ID,
   WORK_ORDER_OBSERVATION_KAFKA_GROUP_ID: envVars.WORK_ORDER_OBSERVATION_KAFKA_GROUP_ID,
   WORK_ORDER_OBSERVATION_KAFKA_CLIENT: envVars.WORK_ORDER_OBSERVATION_KAFKA_CLIENT,
+  DATABASE_TYPE: envVars.DATABASE_TYPE as 'mysql' | 'postgres',
 };

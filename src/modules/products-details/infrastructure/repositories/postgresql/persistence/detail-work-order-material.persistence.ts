@@ -3,19 +3,19 @@
 /* eslint-disable no-useless-catch */
 import { Injectable } from '@nestjs/common';
 import { InterfaceDetailWorkOrderMaterialRepository } from '../../../../domain/contracts/detail-work-order-material.interface.repository';
-import { DatabaseServicePostgreSQL } from '../../../../../../shared/connections/database/postgresql/postgresql.service';
 import { DetailWorkOrderMaterialResponse } from '../../../../domain/schemas/dto/response/detail-work-order-material.response';
 import { DetailWorkOrderMaterialModel } from '../../../../domain/schemas/models/detail-work-order-material.model';
 import { DetailWorkOrderMaterialSqlResponse } from '../../../interfaces/sql/detail-work-order-material.sql.response';
 import { DetailWorkOrderMaterialAdapter } from '../adapters/detail-work-order-material.adapter';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
+import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
 export class DetailWorkOrderMaterialPostgreSqlPersistence
   implements InterfaceDetailWorkOrderMaterialRepository
 {
-  constructor(private readonly postgreSqlService: DatabaseServicePostgreSQL) {}
+  constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async addDetailWorkOrderMaterials(
     detailWorkOrderMaterials: DetailWorkOrderMaterialModel[],
@@ -34,7 +34,7 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence
           detailWorkOrderMaterial.getUnitCost(),
         ];
         const result =
-          await this.postgreSqlService.query<DetailWorkOrderMaterialSqlResponse>(
+          await this.databaseService.query<DetailWorkOrderMaterialSqlResponse>(
             query,
             values,
           );
@@ -46,11 +46,9 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence
           message: 'No detail work order materials were added',
         });
       }
-      const responses: DetailWorkOrderMaterialResponse[] =
-        DetailWorkOrderMaterialAdapter.fromDetailWorkOrderMaterialSqlResponseListToDetailWorkOrderMaterialResponseList(
+      return DetailWorkOrderMaterialAdapter.fromDetailWorkOrderMaterialSqlResponseListToDetailWorkOrderMaterialResponseList(
           results,
         );
-      return responses;
     } catch (error) {
       throw error;
     }
@@ -67,7 +65,7 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence
       `;
       const values = [workOrderId];
       const results =
-        await this.postgreSqlService.query<DetailWorkOrderMaterialSqlResponse>(
+        await this.databaseService.query<DetailWorkOrderMaterialSqlResponse>(
           query,
           values,
         );
@@ -100,8 +98,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence
       WHERE id_orden_trabajo = $1;
       `;
       const values = [workOrderId];
-      const result = await this.postgreSqlService.query<boolean>(query, values);
-      return result[0];
+      const result = await this.databaseService.execute(query, values);
+      return result.affectedRows > 0;
     } catch (error) {
       throw error;
     }
