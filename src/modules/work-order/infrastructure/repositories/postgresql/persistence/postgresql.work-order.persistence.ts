@@ -38,9 +38,7 @@ import { WorkOrdersStatisticsKeySqlResponse } from '../../../interfaces/sql/work
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
-export class PostgreSQLWorkOrderPersistence
-  implements InterfaceWorkOrderRepository
-{
+export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderRepository {
   constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async createWorkOrder(
@@ -67,7 +65,7 @@ export class PostgreSQLWorkOrderPersistence
             $5,
             $6,
             $7,
-            work_orders.ST_SetSRID(work_orders.ST_MakePoint($8, $9), 4326),
+            public.ST_SetSRID(public.ST_MakePoint($8, $9), 4326),
             $10,
             $11
         )
@@ -290,7 +288,10 @@ export class PostgreSQLWorkOrderPersistence
     }
   }
 
-  async getAllWorkOrders(limit?:number, offset?:number): Promise<WorkOrderResponse[]> {
+  async getAllWorkOrders(
+    limit?: number,
+    offset?: number,
+  ): Promise<WorkOrderResponse[]> {
     try {
       const paramsQuery: any[] = [limit, offset];
 
@@ -318,8 +319,10 @@ export class PostgreSQLWorkOrderPersistence
         LIMIT $1 OFFSET $2;
       `;
 
-      const result =
-        await this.databaseService.query<WorkOrderSQLResponse>(query, paramsQuery);
+      const result = await this.databaseService.query<WorkOrderSQLResponse>(
+        query,
+        paramsQuery,
+      );
 
       return result.map((item) =>
         WorkOrderAdapter.fromWorkOrderSQLResponseToWorkOrderResponse(item),
@@ -354,7 +357,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromWorkOrderStattisticsSQLResponseToWorkOrderStatisticsResponse(item),
+        WorkOrderAdapter.fromWorkOrderStattisticsSQLResponseToWorkOrderStatisticsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -386,7 +391,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewWorkOrderAssignmentsSqlResponseToViewWorkOrderAssignmentsResponse(item),
+        WorkOrderAdapter.fromViewWorkOrderAssignmentsSqlResponseToViewWorkOrderAssignmentsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -418,7 +425,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewWorkOrderMaterialsSqlResponseToViewWorkOrderMaterialsResponse(item),
+        WorkOrderAdapter.fromViewWorkOrderMaterialsSqlResponseToViewWorkOrderMaterialsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -450,7 +459,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewWorkOrderAttachmentsSqlResponseToViewWorkOrderAttachmentsResponse(item),
+        WorkOrderAdapter.fromViewWorkOrderAttachmentsSqlResponseToViewWorkOrderAttachmentsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -482,7 +493,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewWorkOrderObservationsSqlResponseToViewWorkOrderObservationsResponse(item),
+        WorkOrderAdapter.fromViewWorkOrderObservationsSqlResponseToViewWorkOrderObservationsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -514,7 +527,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewWorkOrdersByClientSqlResponseToViewWorkOrdersByClientResponse(item),
+        WorkOrderAdapter.fromViewWorkOrdersByClientSqlResponseToViewWorkOrdersByClientResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -546,7 +561,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(item),
+        WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -621,7 +638,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse(item),
+        WorkOrderAdapter.fromWorkOrderPriorityStatisticsSQLResponseToWorkOrderPriorityStatisticsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -659,7 +678,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse(item),
+        WorkOrderAdapter.fromWorkOrderTypeStatisticsSQLResponseToWorkOrderTypeStatisticsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -697,7 +718,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse(item),
+        WorkOrderAdapter.fromWorkOrderStatusStatisticsSQLResponseToWorkOrderStatusStatisticsResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;
@@ -725,7 +748,9 @@ export class PostgreSQLWorkOrderPersistence
       }
 
       return result.map((item) =>
-        WorkOrderAdapter.fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse(item),
+        WorkOrderAdapter.fromWorkOrdersStatisticsKeySqlResponseToWorkOrdersStatisticsKeyResponse(
+          item,
+        ),
       );
     } catch (error) {
       throw error;

@@ -1,4 +1,4 @@
-export class WorkOrdersStatisticsKeyResponse {
+export interface WorkOrdersStatisticsKeyResponse {
   totalOrders: number;
   statusId: number;
   statusName: string;

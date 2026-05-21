@@ -1,3 +1,5 @@
+import { UUID } from 'crypto';
+
 export class CreateWorkOrderRequest {
   orderCode: string;
   workTypeId: number;
@@ -9,9 +11,9 @@ export class CreateWorkOrderRequest {
   status?: number;
   description: string;
   location: string;
-  createdUserId: number;
-  assignedUserId?: number;
-  completedUserId?: number;
+  createdUserId: UUID;
+  assignedUserId?: UUID;
+  completedUserId?: UUID;
   coordinates?: string;
   metadata?: string;
   cadastralKey?: string;
@@ -21,14 +23,14 @@ export class CreateWorkOrderRequest {
     priorityId: number,
     description: string,
     location: string,
-    createdUserId: number,
+    createdUserId: UUID,
     clientId?: string,
     creationDate?: Date,
     assignationDate?: Date,
     completionDate?: Date,
     status?: number,
-    assignedUserId?: number,
-    completedUserId?: number,
+    assignedUserId?: UUID,
+    completedUserId?: UUID,
     coordinates?: string,
     metadata?: string,
     cadastralKey?: string,

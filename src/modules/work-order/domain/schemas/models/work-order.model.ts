@@ -1,3 +1,5 @@
+import { UUID } from 'crypto';
+
 export class WorkOrderModel {
   private workOrderId?: number;
   private orderCode: string;
@@ -10,9 +12,9 @@ export class WorkOrderModel {
   private status?: number;
   private description: string;
   private location: string;
-  private createdUserId: number;
-  private assignedUserId?: number;
-  private completedUserId?: number;
+  private createdUserId: UUID;
+  private assignedUserId?: UUID;
+  private completedUserId?: UUID;
   private coordinates?: string;
   private metadata?: string;
   private cadastralKey?: string;
@@ -24,15 +26,15 @@ export class WorkOrderModel {
     priorityId: number,
     description: string,
     location: string,
-    createdUserId: number,
+    createdUserId: UUID,
     workOrderId?: number,
     clientId?: string,
     creationDate?: Date,
     assignationDate?: Date,
     completionDate?: Date,
     status?: number,
-    assignedUserId?: number,
-    completedUserId?: number,
+    assignedUserId?: UUID,
+    completedUserId?: UUID,
     coordinates?: string,
     metadata?: string,
     cadastralKey?: string,
@@ -149,15 +151,15 @@ export class WorkOrderModel {
     return this.location;
   }
 
-  getCreatedUserId(): number {
+  getCreatedUserId(): UUID {
     return this.createdUserId;
   }
 
-  getAssignedUserId(): number | undefined {
+  getAssignedUserId(): UUID | undefined {
     return this.assignedUserId;
   }
 
-  getCompletedUserId(): number | undefined {
+  getCompletedUserId(): UUID | undefined {
     return this.completedUserId;
   }
 
@@ -185,11 +187,11 @@ export class WorkOrderModel {
     this.completionDate = completionDate;
   }
 
-  setAssignedUserId(assignedUserId: number): void {
+  setAssignedUserId(assignedUserId: UUID): void {
     this.assignedUserId = assignedUserId;
   }
 
-  setCompletedUserId(completedUserId: number): void {
+  setCompletedUserId(completedUserId: UUID): void {
     this.completedUserId = completedUserId;
   }
 
@@ -241,7 +243,7 @@ export class WorkOrderModel {
     this.workTypeId = workTypeId;
   }
 
-  setCreatedUserId(createdUserId: number): void {
+  setCreatedUserId(createdUserId: UUID): void {
     this.createdUserId = createdUserId;
   }
 
