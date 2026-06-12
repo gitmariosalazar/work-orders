@@ -12,17 +12,17 @@ export interface ViewWorkOrderHistoryResponse {
   priority: string;
   currentState: string;
   clientId: string;
-  createdByUserId?: number;
-  assignedToUserId?: number;
-  completedByUserId?: number;
+  createdByUserId?: string;
+  assignedToUserId?: string;
+  completedByUserId?: string;
   creationDate: string;
   assignmentDate?: string;
   completionDate?: string;
   historicalId: number;
-  historicalStateId?: number;
+  historicalStateId?: string;
   historicalStateName?: string;
   stateChangeDate?: string;
-  stateChangeUserId?: number;
+  stateChangeUserId?: string;
   changeDescription?: string;
   changeNumber?: number;
 }

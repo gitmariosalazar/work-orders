@@ -1,9 +1,9 @@
 export interface WorkOrderHistoryResponse {
   workOrderHistoryId?: number;
-  workOrderId: number;
-  statusId?: number;
+  workOrderId: string;
+  statusId?: string;
   changeDate: Date;
-  userId: number;
+  userId: string;
   changeDescription?: string;
   cadastralKey?: string;
   orderCode?: string;

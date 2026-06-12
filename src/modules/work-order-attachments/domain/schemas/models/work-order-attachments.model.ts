@@ -1,5 +1,5 @@
 export class WorkOrderAttachmentModel {
-  attachmentId: number;
+  attachmentId: string;
   workOrderId: string;
   fileName: string;
   fileType: string;
@@ -7,7 +7,7 @@ export class WorkOrderAttachmentModel {
   uploadDate: Date;
 
   constructor(
-    attachmentId: number,
+    attachmentId: string,
     workOrderId: string,
     fileName: string,
     fileType: string,
@@ -22,7 +22,7 @@ export class WorkOrderAttachmentModel {
     this.uploadDate = uploadDate;
   }
 
-  getAttachmentId(): number {
+  getAttachmentId(): string {
     return this.attachmentId;
   }
 
@@ -66,7 +66,7 @@ export class WorkOrderAttachmentModel {
     this.workOrderId = workOrderId;
   }
 
-  setAttachmentId(attachmentId: number): void {
+  setAttachmentId(attachmentId: string): void {
     this.attachmentId = attachmentId;
   }
 

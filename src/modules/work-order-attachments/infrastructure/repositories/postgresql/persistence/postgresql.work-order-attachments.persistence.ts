@@ -9,10 +9,17 @@ import { WorkOrderAttachmentModel } from '../../../../domain/schemas/models/work
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
-export class PostgresqlWorkOrderAttachmentsPersistence
-  implements InterfaceWorkOrderAttachmentsRepository
-{
+export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkOrderAttachmentsRepository {
   constructor(private readonly databaseService: DatabaseAbstract) {}
+
+  private readonly returnFields = `
+    id_adjunto AS attachment_id,
+    id_orden_trabajo AS work_order_id,
+    nombre_archivo AS file_name,
+    tipo_adjunto AS file_type,
+    url_archivo AS file_url,
+    created_at AS upload_date
+  `;
 
   async findAllAttachments(
     limit?: number,
@@ -21,16 +28,14 @@ export class PostgresqlWorkOrderAttachmentsPersistence
     try {
       const query: string = `
       SELECT
-          a.id_adjunto AS attachment_id,
-          a.id_orden_trabajo AS work_order_id,
-          a.nombre_archivo AS file_name,
-          a.tipo AS file_type,
-          a.url_archivo AS file_url,
-          a.fecha_subida AS upload_date
-      FROM work_orders.adjuntos_orden_trabajo a LIMIT $1 OFFSET $2;  
+          ${this.returnFields}
+        FROM work_orders.adjuntos_orden_trabajo a
+        WHERE a.is_deleted = FALSE
+        ORDER BY a.created_at DESC
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
 
-      const params = [limit || 100, offset || 0];
+      const params = [limit ?? null, offset ?? null];
       const result =
         await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
           query,
@@ -38,27 +43,23 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         );
 
       return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
-          result,
-        );
+        result,
+      );
     } catch (error) {
       throw error;
     }
   }
 
   async getWorkOrderAttachmentById(
-    attachmentId: number,
+    attachmentId: string,
   ): Promise<WorkOrderAttachmentsResponse | null> {
     try {
       const query: string = `
       SELECT
-          a.id_adjunto AS attachment_id,
-          a.id_orden_trabajo AS work_order_id,
-          a.nombre_archivo AS file_name,
-          a.tipo AS file_type,
-          a.url_archivo AS file_url,
-          a.fecha_subida AS upload_date
+          ${this.returnFields}
       FROM work_orders.adjuntos_orden_trabajo a
-      WHERE a.id_adjunto = $1;  
+      WHERE a.id_adjunto = $1
+        AND a.is_deleted = FALSE;
       `;
 
       const params = [attachmentId];
@@ -76,18 +77,23 @@ export class PostgresqlWorkOrderAttachmentsPersistence
       }
 
       return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
-          result[0],
-        );
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
   }
 
-  async deleteWorkOrderAttachment(attachmentId: number): Promise<boolean> {
+  async deleteWorkOrderAttachment(attachmentId: string): Promise<boolean> {
     try {
       const query: string = `
-      DELETE FROM work_orders.adjuntos_orden_trabajo
-      WHERE id_adjunto = $1;
+      UPDATE work_orders.adjuntos_orden_trabajo
+      SET
+          is_deleted = TRUE,
+          deleted_at = NOW(),
+          updated_at = NOW()
+      WHERE id_adjunto = $1
+        AND is_deleted = FALSE;
       `;
 
       const params = [attachmentId];
@@ -105,23 +111,27 @@ export class PostgresqlWorkOrderAttachmentsPersistence
     try {
       const query: string = `
       INSERT INTO work_orders.adjuntos_orden_trabajo
-          (id_orden_trabajo, nombre_archivo, tipo, url_archivo, fecha_subida)
-      VALUES ($1, $2, $3, $4, $5)
+          (id_orden_trabajo, nombre_archivo, tipo_adjunto, url_archivo, mime_type, created_by)
+      SELECT
+          $1,
+          $2,
+          $3,
+          $4,
+          $5,
+          ot.created_by
+      FROM work_orders.orden_trabajo ot
+      WHERE ot.id_orden_trabajo = $1
+        AND ot.is_deleted = FALSE
       RETURNING
-          id_adjunto AS attachment_id,
-          id_orden_trabajo AS work_order_id,
-          nombre_archivo AS file_name,
-          tipo AS file_type,
-          url_archivo AS file_url,
-          fecha_subida AS upload_date;
+          ${this.returnFields};
       `;
 
       const params = [
-        attachment.workOrderId,
-        attachment.fileName,
-        attachment.fileType,
-        attachment.fileUrl,
-        attachment.uploadDate,
+        attachment.getWorkOrderId(),
+        attachment.getFileName(),
+        attachment.getFileType(),
+        attachment.getFileUrl(),
+        null,
       ];
       const result =
         await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
@@ -131,21 +141,21 @@ export class PostgresqlWorkOrderAttachmentsPersistence
 
       if (result.length === 0) {
         throw new RpcException({
-          statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to add work order attachment',
+          statusCode: statusCode.BAD_REQUEST,
+          message: `Work order with ID ${attachment.getWorkOrderId()} does not exist.`,
         });
       }
 
       return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
-          result[0],
-        );
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
   }
 
   async updateWorkOrderAttachment(
-    attachmentId: number,
+    attachmentId: string,
     attachment: WorkOrderAttachmentModel,
   ): Promise<WorkOrderAttachmentsResponse | null> {
     try {
@@ -153,25 +163,21 @@ export class PostgresqlWorkOrderAttachmentsPersistence
       UPDATE work_orders.adjuntos_orden_trabajo
       SET id_orden_trabajo = COALESCE($1, id_orden_trabajo),
           nombre_archivo = COALESCE($2, nombre_archivo),
-          tipo = COALESCE($3, tipo),
+          tipo_adjunto = COALESCE($3, tipo_adjunto),
           url_archivo = COALESCE($4, url_archivo),
-          fecha_subida = COALESCE($5, fecha_subida)
+          updated_at = NOW()
       WHERE id_adjunto = $6
+        AND is_deleted = FALSE
       RETURNING
-          id_adjunto AS attachment_id,
-          id_orden_trabajo AS work_order_id,
-          nombre_archivo AS file_name,
-          tipo AS file_type,
-          url_archivo AS file_url,
-          fecha_subida AS upload_date;
+          ${this.returnFields};
       `;
 
       const params = [
-        attachment.workOrderId,
-        attachment.fileName,
-        attachment.fileType,
-        attachment.fileUrl,
-        attachment.uploadDate,
+        attachment.getWorkOrderId(),
+        attachment.getFileName(),
+        attachment.getFileType(),
+        attachment.getFileUrl(),
+        attachment.getUploadDate(),
         attachmentId,
       ];
       const result =
@@ -182,14 +188,14 @@ export class PostgresqlWorkOrderAttachmentsPersistence
 
       if (result.length === 0) {
         throw new RpcException({
-          statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to update work order attachment',
+          statusCode: statusCode.NOT_FOUND,
+          message: `Work order attachment with ID ${attachmentId} not found`,
         });
       }
 
       return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponseToWorkOrderAttachmentsResponse(
-          result[0],
-        );
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -201,14 +207,11 @@ export class PostgresqlWorkOrderAttachmentsPersistence
     try {
       const query: string = `
       SELECT
-          a.id_adjunto AS attachment_id,
-          a.id_orden_trabajo AS work_order_id,
-          a.nombre_archivo AS file_name,
-          a.tipo AS file_type,
-          a.url_archivo AS file_url,
-          a.fecha_subida AS upload_date
+          ${this.returnFields}
       FROM work_orders.adjuntos_orden_trabajo a
-      WHERE a.id_orden_trabajo = $1;  
+      WHERE a.id_orden_trabajo = $1
+        AND a.is_deleted = FALSE
+      ORDER BY a.created_at DESC;
       `;
 
       const params = [workOrderId];
@@ -219,8 +222,8 @@ export class PostgresqlWorkOrderAttachmentsPersistence
         );
 
       return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
-          result,
-        );
+        result,
+      );
     } catch (error) {
       throw error;
     }

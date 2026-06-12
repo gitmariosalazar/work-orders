@@ -45,19 +45,25 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     workOrder: WorkOrderModel,
   ): Promise<WorkOrderResponse | null> {
     try {
+      const [longitude, latitude] = this.parsePointCoordinates(
+        workOrder.getCoordinates(),
+      );
+
       const query = `
         INSERT INTO work_orders.orden_trabajo (
+            origen,
             id_tipo_trabajo,
             id_prioridad,
             estado,
             id_cliente,
             descripcion,
-            ubicacion,
-            usuario_creacion,
-            coordenadas,
+            direccion,
+            created_by,
+            geom_punto,
             metadata,
             clave_catastral
         ) VALUES (
+            'SOLICITUD',
             $1,
             $2,
             $3,
@@ -65,7 +71,11 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
             $5,
             $6,
             $7,
-            public.ST_SetSRID(public.ST_MakePoint($8, $9), 4326),
+            CASE
+              WHEN $8::double precision IS NULL OR $9::double precision IS NULL
+              THEN NULL
+              ELSE public.ST_SetSRID(public.ST_MakePoint($8, $9), 4326)
+            END,
             $10,
             $11
         )
@@ -80,11 +90,11 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
             fecha_completada AS completion_date,
             estado AS status,
             descripcion AS description,
-            ubicacion AS location,
-            usuario_creacion::TEXT AS created_user_id,
+            direccion AS location,
+            created_by::TEXT AS created_user_id,
             usuario_asignacion::TEXT AS assigned_user_id,
             usuario_completacion::TEXT AS completed_user_id,
-            coordenadas AS coordinates,
+            public.ST_AsText(geom_punto) AS coordinates,
             metadata::TEXT AS metadata,
             clave_catastral AS cadastral_key,
             is_deleted;
@@ -92,21 +102,13 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
       const values = [
         toNull(workOrder.getWorkTypeId()),
         toNull(workOrder.getPriorityId()),
-        toNull(workOrder.getStatus()),
+        toNull(this.normalizeStatusCode(workOrder.getStatus())),
         toNull(workOrder.getClientId()),
         toNull(workOrder.getDescription()),
         toNull(workOrder.getLocation()),
         toNull(workOrder.getCreatedUserId()),
-        toNull(
-          parseFloat(
-            workOrder.getCoordinates()?.split('(')[1]?.split(' ')?.[0] ?? '',
-          ) || null,
-        ),
-        toNull(
-          parseFloat(
-            workOrder.getCoordinates()?.split(' ')[1]?.split(')')?.[0] ?? '',
-          ) || null,
-        ),
+        toNull(longitude),
+        toNull(latitude),
         toNull(workOrder.getMetadata()),
         toNull(workOrder.getCadastralKey()),
       ];
@@ -135,6 +137,10 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     workOrder: WorkOrderModel,
   ): Promise<WorkOrderResponse | null> {
     try {
+      const [longitude, latitude] = this.parsePointCoordinates(
+        workOrder.getCoordinates(),
+      );
+
       const query = `
         UPDATE work_orders.orden_trabajo
         SET
@@ -143,12 +149,22 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
             id_prioridad = COALESCE($3, id_prioridad),
             estado = COALESCE($4, estado),
             id_cliente = COALESCE($5, id_cliente),
-            ubicacion = COALESCE($6, ubicacion),
+            direccion = COALESCE($6, direccion),
             usuario_asignacion = COALESCE($7, usuario_asignacion),
             usuario_completacion = COALESCE($8, usuario_completacion),
             metadata = COALESCE($9, metadata),
-            clave_catastral = COALESCE($10, clave_catastral)
-        WHERE codigo_orden = $11
+            clave_catastral = COALESCE($10, clave_catastral),
+            geom_punto = COALESCE(
+              CASE
+                WHEN $11::double precision IS NULL OR $12::double precision IS NULL
+                THEN NULL
+                ELSE public.ST_SetSRID(public.ST_MakePoint($11, $12), 4326)
+              END,
+              geom_punto
+            ),
+            updated_at = NOW()
+        WHERE codigo_orden = $13
+          AND is_deleted = FALSE
         RETURNING 
             id_orden_trabajo::TEXT AS work_order_id,
             codigo_orden AS order_code,
@@ -160,11 +176,11 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
             fecha_completada AS completion_date,
             estado AS status,
             descripcion AS description,
-            ubicacion AS location,
-            usuario_creacion::TEXT AS created_user_id,
+            direccion AS location,
+            created_by::TEXT AS created_user_id,
             usuario_asignacion::TEXT AS assigned_user_id,
             usuario_completacion::TEXT AS completed_user_id,
-            coordenadas AS coordinates,
+            public.ST_AsText(geom_punto) AS coordinates,
             metadata::TEXT AS metadata,
             clave_catastral AS cadastral_key,
             is_deleted;
@@ -173,13 +189,15 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
         toNull(workOrder.getDescription()),
         toNull(workOrder.getWorkTypeId()),
         toNull(workOrder.getPriorityId()),
-        toNull(workOrder.getStatus()),
+        toNull(this.normalizeStatusCode(workOrder.getStatus())),
         toNull(workOrder.getClientId()),
         toNull(workOrder.getLocation()),
         toNull(workOrder.getAssignedUserId()),
         toNull(workOrder.getCompletedUserId()),
         toNull(workOrder.getMetadata()),
         toNull(workOrder.getCadastralKey()),
+        toNull(longitude),
+        toNull(latitude),
         orderCode,
       ];
 
@@ -189,8 +207,8 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
       );
       if (result.length === 0) {
         throw new RpcException({
-          statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to update work order',
+          statusCode: statusCode.NOT_FOUND,
+          message: `Work order with code ${orderCode} not found`,
         });
       }
 
@@ -218,16 +236,17 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
           fecha_completada AS completion_date,
           estado AS status,
           descripcion AS description,
-          ubicacion AS location,
-          usuario_creacion::TEXT AS created_user_id,
+          direccion AS location,
+          created_by::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,
+          public.ST_AsText(geom_punto) AS coordinates,
           metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
         FROM work_orders.orden_trabajo
-        WHERE id_cliente = $1;
+        WHERE id_cliente = $1
+          AND is_deleted = FALSE;
       `;
       const values = [clientId];
 
@@ -258,16 +277,17 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
           fecha_completada AS completion_date,
           estado AS status,
           descripcion AS description,
-          ubicacion AS location,
-          usuario_creacion::TEXT AS created_user_id,
+          direccion AS location,
+          created_by::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,
+          public.ST_AsText(geom_punto) AS coordinates,
           metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
         FROM work_orders.orden_trabajo
-        WHERE codigo_orden = $1;
+        WHERE codigo_orden = $1
+          AND is_deleted = FALSE;
       `;
       const values = [orderCode];
 
@@ -293,7 +313,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     offset?: number,
   ): Promise<WorkOrderResponse[]> {
     try {
-      const paramsQuery: any[] = [limit, offset];
+      const paramsQuery: any[] = [toNull(limit), toNull(offset)];
 
       const query = `
         SELECT 
@@ -307,16 +327,18 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
           fecha_completada AS completion_date,
           estado AS status,
           descripcion AS description,
-          ubicacion AS location,
-          usuario_creacion::TEXT AS created_user_id,
+          direccion AS location,
+          created_by::TEXT AS created_user_id,
           usuario_asignacion::TEXT AS assigned_user_id,
           usuario_completacion::TEXT AS completed_user_id,
-          coordenadas AS coordinates,
+          public.ST_AsText(geom_punto) AS coordinates,
           metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
           is_deleted
-        FROM work_orders.orden_trabajo ORDER BY fecha_creacion DESC
-        LIMIT $1 OFFSET $2;
+        FROM work_orders.orden_trabajo
+        WHERE is_deleted = FALSE
+        ORDER BY fecha_creacion DESC
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
 
       const result = await this.databaseService.query<WorkOrderSQLResponse>(
@@ -339,7 +361,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_order_statistics
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -373,7 +395,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_order_assignments
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -407,7 +429,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_order_materials
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -441,7 +463,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_order_attachments
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -475,7 +497,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_order_observations
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -509,7 +531,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_work_orders_by_client
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -543,7 +565,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT * FROM work_orders.view_all_work_orders_full_details
-        LIMIT $1 OFFSET $2;
+        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
       `;
       const values = [toNull(limit), toNull(offset)];
 
@@ -656,8 +678,8 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
             tt.nombre AS work_type,
             tt.id_tipo_trabajo AS work_type_id,
             COUNT(*) AS quantity,
-            COUNT(*) FILTER (WHERE ot.estado = 7) AS completed,
-            ROUND(100.0 * COUNT(*) FILTER (WHERE ot.estado = 7) / NULLIF(COUNT(*), 0), 2) AS completion_rate_percentage
+            COUNT(*) FILTER (WHERE ot.estado = 'COMPLETADA') AS completed,
+            ROUND(100.0 * COUNT(*) FILTER (WHERE ot.estado = 'COMPLETADA') / NULLIF(COUNT(*), 0), 2) AS completion_rate_percentage
         FROM work_orders.orden_trabajo ot
         JOIN work_orders.tipo_trabajo tt ON ot.id_tipo_trabajo = tt.id_tipo_trabajo
         WHERE ot.is_deleted = FALSE
@@ -693,15 +715,15 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT
-            eot.nombre_estado AS status_name,
+            ceo.nombre AS status_name,
             ot.estado AS status_id,
-            eot.descripcion AS status_description,
+            ceo.descripcion AS status_description,
             COUNT(*)  AS quantity,
             ROUND(100.0 * COUNT(*) / SUM(COUNT(*)) OVER (), 2) AS percentage_of_total
         FROM work_orders.orden_trabajo ot
-        JOIN work_orders.estado_orden_trabajo eot ON ot.estado = eot.id_estado
+        JOIN work_orders.cat_estado_orden ceo ON ot.estado = ceo.codigo
         WHERE ot.is_deleted = FALSE
-        GROUP BY eot.id_estado, eot.nombre_estado, ot.estado, eot.descripcion
+        GROUP BY ceo.codigo, ceo.nombre, ot.estado, ceo.descripcion
         ORDER BY quantity DESC;
       `;
 
@@ -754,6 +776,73 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
       );
     } catch (error) {
       throw error;
+    }
+  }
+
+  private parsePointCoordinates(
+    coordinates?: string,
+  ): [number | null, number | null] {
+    if (!coordinates) {
+      return [null, null];
+    }
+
+    const match = coordinates
+      .trim()
+      .match(/^POINT\s*\(\s*(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s*\)$/i);
+
+    if (!match) {
+      return [null, null];
+    }
+
+    return [Number(match[1]), Number(match[2])];
+  }
+
+  private normalizeStatusCode(status?: string | number): string | undefined {
+    if (status === undefined || status === null) {
+      return undefined;
+    }
+
+    if (typeof status === 'number') {
+      return this.mapNumericStatus(status);
+    }
+
+    const trimmedStatus = status.trim();
+    if (trimmedStatus === '') {
+      return undefined;
+    }
+
+    const parsedStatus = Number(trimmedStatus);
+    if (!Number.isNaN(parsedStatus)) {
+      return this.mapNumericStatus(parsedStatus);
+    }
+
+    return trimmedStatus.toUpperCase();
+  }
+
+  private mapNumericStatus(status: number): string {
+    switch (status) {
+      case 1:
+        return 'NOTIFICADA';
+      case 2:
+        return 'PENDIENTE';
+      case 3:
+        return 'ASIGNADA';
+      case 4:
+        return 'PREPARACION';
+      case 5:
+        return 'REVISION_RECHAZADA';
+      case 6:
+        return 'EN_PROCESO';
+      case 7:
+        return 'EJECUTADA';
+      case 8:
+        return 'RECHAZADA_TECNICA';
+      case 9:
+        return 'COMPLETADA';
+      case 10:
+        return 'CANCELADA';
+      default:
+        return String(status);
     }
   }
 }

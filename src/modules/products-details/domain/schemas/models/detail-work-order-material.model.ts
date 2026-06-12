@@ -1,5 +1,5 @@
 export class DetailWorkOrderMaterialModel {
-  private detailWorkOrderMaterialId: number;
+  private detailWorkOrderMaterialId: string;
   private workOrderId: string;
   private materialId: number;
   private quantity: number;
@@ -7,7 +7,7 @@ export class DetailWorkOrderMaterialModel {
   private subtotal: number;
 
   constructor(
-    detailWorkOrderMaterialId: number,
+    detailWorkOrderMaterialId: string,
     workOrderId: string,
     materialId: number,
     quantity: number,
@@ -22,7 +22,7 @@ export class DetailWorkOrderMaterialModel {
     this.subtotal = subtotal;
   }
 
-  public getDetailWorkOrderMaterialId(): number {
+  public getDetailWorkOrderMaterialId(): string {
     return this.detailWorkOrderMaterialId;
   }
 
@@ -66,7 +66,7 @@ export class DetailWorkOrderMaterialModel {
     this.workOrderId = workOrderId;
   }
 
-  setDetailWorkOrderMaterialId(detailWorkOrderMaterialId: number): void {
+  setDetailWorkOrderMaterialId(detailWorkOrderMaterialId: string): void {
     this.detailWorkOrderMaterialId = detailWorkOrderMaterialId;
   }
 

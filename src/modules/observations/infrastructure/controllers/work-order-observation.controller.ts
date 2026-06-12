@@ -24,7 +24,7 @@ export class WorkOrderObservationController {
   async updateWorkOrderObservation(
     @Payload()
     data: {
-      workOrderObservationId: number;
+      workOrderObservationId: string;
       workOrderObservation: Partial<UpdateWorkOrderObservationRequest>;
     },
   ) {
@@ -36,7 +36,7 @@ export class WorkOrderObservationController {
   }
 
   @MessagePattern('work-orders-observations.get-work-order-observation-by-id')
-  async getWorkOrderObservationById(@Payload() workOrderObservationId: number) {
+  async getWorkOrderObservationById(@Payload() workOrderObservationId: string) {
     return this.workOrderObservationService.getWorkOrderObservationById(
       workOrderObservationId,
     );

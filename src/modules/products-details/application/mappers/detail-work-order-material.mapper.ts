@@ -26,7 +26,7 @@ export class DetailWorkOrderMaterialMapper {
     request: CreateDetailWorkOrderMaterialRequest,
   ): DetailWorkOrderMaterialModel {
     return new DetailWorkOrderMaterialModel(
-      0,
+      '',
       request.workOrderId,
       request.materialId,
       request.quantity,

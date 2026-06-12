@@ -1,16 +1,16 @@
 export class CreateWorkHistoryRequest {
-  workOrderId: number;
-  statusId?: number;
+  workOrderId: string;
+  statusId?: string;
   changeDate?: Date;
-  userId: number;
+  userId: string;
   changeDescription?: string;
   cadastralKey?: string;
   orderCode?: string;
 
   constructor(
-    workOrderId: number,
-    userId: number,
-    statusId?: number,
+    workOrderId: string,
+    userId: string,
+    statusId?: string,
     changeDate?: Date,
     changeDescription?: string,
     cadastralKey?: string,

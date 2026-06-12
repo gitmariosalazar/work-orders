@@ -1,7 +1,7 @@
 export interface WorkOrderObservationResponse {
-  observationId: number;
+  observationId: string;
   workOrderId: string;
   description: string;
-  workerId: number;
+  workerId: string;
   createdAt?: Date;
 }

@@ -13,9 +13,7 @@ import { UpdateWorkOrderHistoryRequest } from '../../domain/schemas/dto/request/
 import { ViewWorkOrderHistoryResponse } from '../../domain/schemas/dto/response/view-work-order-history.response';
 
 @Injectable()
-export class WorkOrderHistoryService
-  implements InterfaceWorkOrderHistoryUseCase
-{
+export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase {
   constructor(
     @Inject('WorkOrderHistoryRepository')
     private readonly workOrderHistoryRepository: InterfaceWorkOrderHistoryRepository,
@@ -30,8 +28,6 @@ export class WorkOrderHistoryService
         'statusId',
         'userId',
         'changeDescription',
-        'cadastralKey',
-        'orderCode',
       ];
 
       const missingFieldMessages: string[] = validateFields(
@@ -87,12 +83,7 @@ export class WorkOrderHistoryService
         });
       }
 
-      const requiredFields: string[] = [
-        'userId',
-        'changeDescription',
-        'cadastralKey',
-        'orderCode',
-      ];
+      const requiredFields: string[] = ['userId', 'changeDescription'];
 
       const missingFieldMessages: string[] = validateFields(
         updateWorkOrderHistoryRequest,

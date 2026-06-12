@@ -1,15 +1,15 @@
 export class WorkOrderObservationModel {
-  private observationId: number;
+  private observationId: string;
   private workOrderId: string;
   private description: string;
-  private workerId: number;
+  private workerId: string;
   private createdAt?: Date;
 
   constructor(
-    observationId: number,
+    observationId: string,
     workOrderId: string,
     description: string,
-    workerId: number,
+    workerId: string,
     createdAt?: Date,
   ) {
     this.observationId = observationId;
@@ -19,12 +19,11 @@ export class WorkOrderObservationModel {
     this.createdAt = createdAt;
   }
 
-  getObservationId(): number {
+  getObservationId(): string {
     return this.observationId;
   }
 
   getWorkOrderId(): string {
-    console.log('Getting workOrderId:', this.workOrderId);
     return this.workOrderId;
   }
 
@@ -36,7 +35,7 @@ export class WorkOrderObservationModel {
     return this.createdAt;
   }
 
-  getWorkerId(): number {
+  getWorkerId(): string {
     return this.workerId;
   }
 
@@ -48,7 +47,7 @@ export class WorkOrderObservationModel {
     this.createdAt = createdAt;
   }
 
-  setWorkerId(workerId: number): void {
+  setWorkerId(workerId: string): void {
     this.workerId = workerId;
   }
 

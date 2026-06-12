@@ -32,7 +32,7 @@ export class WorkOrderObservationMapper {
     request: CreateWorkOrderObservationRequest,
   ): WorkOrderObservationModel {
     return new WorkOrderObservationModel(
-      0,
+      '',
       request.workOrderId,
       request.description,
       request.workerId,
@@ -42,7 +42,7 @@ export class WorkOrderObservationMapper {
   static fromUpdateWorkOrderObservationRequestToWorkOrderObservationModel(
     request: Partial<UpdateWorkOrderObservationRequest>,
   ): Partial<WorkOrderObservationModel> {
-    const model = new WorkOrderObservationModel(0, '', '', 0);
+    const model = new WorkOrderObservationModel('', '', '', '');
 
     if (request.workOrderId !== undefined) {
       model.setWorkOrderId(request.workOrderId);

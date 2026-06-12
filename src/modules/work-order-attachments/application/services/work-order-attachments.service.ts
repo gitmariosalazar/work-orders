@@ -11,9 +11,7 @@ import { statusCode } from '../../../../settings/environments/status-code';
 import { validateFields } from '../../../../shared/validators/fields.validators';
 
 @Injectable()
-export class WorkOrderAttachmentsService
-  implements InterfaceWorkOrderAttachmentsUseCase
-{
+export class WorkOrderAttachmentsService implements InterfaceWorkOrderAttachmentsUseCase {
   constructor(
     @Inject('WorkOrderAttachmentsRepository')
     private readonly workOrderAttachmentsUseCase: InterfaceWorkOrderAttachmentsRepository,
@@ -63,11 +61,11 @@ export class WorkOrderAttachmentsService
   }
 
   async updateWorkOrderAttachment(
-    attachmentId: number,
+    attachmentId: string,
     attachment: UpdateWorkOrderAttachmentsRequest,
   ): Promise<WorkOrderAttachmentsResponse | null> {
     try {
-      if (!attachmentId || attachmentId <= 0) {
+      if (!attachmentId || attachmentId.trim() === '') {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'Invalid attachment ID',
@@ -120,10 +118,10 @@ export class WorkOrderAttachmentsService
   }
 
   async getWorkOrderAttachmentById(
-    attachmentId: number,
+    attachmentId: string,
   ): Promise<WorkOrderAttachmentsResponse | null> {
     try {
-      if (!attachmentId || attachmentId <= 0) {
+      if (!attachmentId || attachmentId.trim() === '') {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'Invalid attachment ID',
@@ -148,9 +146,9 @@ export class WorkOrderAttachmentsService
     }
   }
 
-  async deleteWorkOrderAttachment(attachmentId: number): Promise<boolean> {
+  async deleteWorkOrderAttachment(attachmentId: string): Promise<boolean> {
     try {
-      if (!attachmentId || attachmentId <= 0) {
+      if (!attachmentId || attachmentId.trim() === '') {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'Invalid attachment ID',
@@ -164,8 +162,8 @@ export class WorkOrderAttachmentsService
 
       if (!result) {
         throw new RpcException({
-          statusCode: statusCode.INTERNAL_SERVER_ERROR,
-          message: 'Failed to delete work order attachment',
+          statusCode: statusCode.NOT_FOUND,
+          message: 'Work order attachment not found',
         });
       }
 

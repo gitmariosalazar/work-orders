@@ -13,9 +13,7 @@ import { WorkOrderObservationMapper } from '../mappers/work-order-observation.ma
 import { UpdateWorkOrderObservationRequest } from '../../domain/schemas/dto/request/update.work-order-observation.request';
 
 @Injectable()
-export class WorkOrderObservationService
-  implements InterfaceWorkOrderObservationUseCase
-{
+export class WorkOrderObservationService implements InterfaceWorkOrderObservationUseCase {
   constructor(
     @Inject('WorkOrderObservationRepository')
     private readonly workOrderObservationRepository: InterfaceWorkOrderObservationRepository,
@@ -66,14 +64,14 @@ export class WorkOrderObservationService
   }
 
   async updateWorkOrderObservation(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
     workOrderObservation: Partial<UpdateWorkOrderObservationRequest>,
   ): Promise<WorkOrderObservationResponse | null> {
     try {
       if (
         workOrderObservationId === undefined ||
         workOrderObservationId === null ||
-        isNaN(workOrderObservationId)
+        workOrderObservationId.trim() === ''
       ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
@@ -81,20 +79,43 @@ export class WorkOrderObservationService
         });
       }
 
-      const requiredFields: string[] = [
-        'workOrderId',
-        'description',
-        'workerId',
-      ];
-
-      const missingFieldMessages: string[] = validateFields(
-        workOrderObservation,
-        requiredFields,
-      );
-      if (missingFieldMessages.length > 0) {
+      if (
+        !workOrderObservation ||
+        Object.keys(workOrderObservation).length === 0
+      ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
-          message: missingFieldMessages,
+          message: 'At least one field is required to update the observation.',
+        });
+      }
+
+      if (
+        workOrderObservation.workOrderId !== undefined &&
+        workOrderObservation.workOrderId.trim() === ''
+      ) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'workOrderId cannot be empty.',
+        });
+      }
+
+      if (
+        workOrderObservation.description !== undefined &&
+        workOrderObservation.description.trim() === ''
+      ) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'description cannot be empty.',
+        });
+      }
+
+      if (
+        workOrderObservation.workerId !== undefined &&
+        workOrderObservation.workerId.trim() === ''
+      ) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'workerId cannot be empty.',
         });
       }
 
@@ -102,11 +123,6 @@ export class WorkOrderObservationService
         WorkOrderObservationMapper.fromUpdateWorkOrderObservationRequestToWorkOrderObservationModel(
           workOrderObservation,
         );
-
-      console.log(
-        'Work order observation model properties to update:',
-        workOrderObservationModelProps,
-      );
 
       const updatedWorkOrderObservation: WorkOrderObservationResponse | null =
         await this.workOrderObservationRepository.update(
@@ -128,12 +144,13 @@ export class WorkOrderObservationService
   }
 
   async getWorkOrderObservationById(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
   ): Promise<WorkOrderObservationResponse | null> {
     try {
       if (
         workOrderObservationId === undefined ||
-        workOrderObservationId === null
+        workOrderObservationId === null ||
+        workOrderObservationId.trim() === ''
       ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,

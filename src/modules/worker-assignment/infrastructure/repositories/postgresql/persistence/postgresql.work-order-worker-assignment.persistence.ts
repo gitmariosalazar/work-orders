@@ -9,9 +9,7 @@ import { WorkOrderWorkerAssignmentAdapter } from '../adapters/postgresql.work-or
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
-export class PostgresqlWorkOrderWorkerAssignmentPersistence
-  implements InterfaceWorkOrderWorkerAssignmentRepository
-{
+export class PostgresqlWorkOrderWorkerAssignmentPersistence implements InterfaceWorkOrderWorkerAssignmentRepository {
   constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async addWorkerAssignmentToWorkOrderList(
@@ -19,23 +17,49 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null> {
     try {
       const query = `
-      INSERT INTO  work_orders.asignacion_orden_trabajo_trabajador( id_orden_trabajo, id_trabajador, id_rol) VALUES ($1, $2, $3) RETURNING id_asignacion AS assignment_id, id_orden_trabajo AS work_order_id, id_trabajador AS worker_id, id_rol AS rol_id, fecha_asignacion AS assigned_date;
+        INSERT INTO work_orders.asignacion_orden_trabajo_trabajador (
+          id_orden_trabajo,
+          id_trabajador,
+          id_rol
+        )
+        VALUES ($1, $2, $3)
+        RETURNING
+          id_asignacion AS assignment_id,
+          id_orden_trabajo AS work_order_id,
+          id_trabajador AS worker_id,
+          id_rol AS rol_id,
+          fecha_asignacion AS assigned_date;
       `;
-      const results: WorkOrderWorkerAssignmentSqlResponse[] = [];
 
-      for (const assignment of workerAssignmentList) {
-        const values = [
-          assignment.getWorkOrderId(),
-          assignment.getWorkerId(),
-          assignment.getRolId(),
-        ];
-        const res: WorkOrderWorkerAssignmentSqlResponse[] =
-          await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(
+      const results = await this.databaseService.transaction<
+        WorkOrderWorkerAssignmentSqlResponse[]
+      >(async (client) => {
+        const insertedRows: WorkOrderWorkerAssignmentSqlResponse[] = [];
+
+        for (const assignment of workerAssignmentList) {
+          const values = [
+            assignment.getWorkOrderId(),
+            assignment.getWorkerId(),
+            assignment.getRolId(),
+          ];
+
+          const res = await client.query<WorkOrderWorkerAssignmentSqlResponse>(
             query,
             values,
           );
-        results.push(res[0]);
-      }
+
+          if (res.length === 0) {
+            throw new RpcException({
+              statusCode: statusCode.INTERNAL_SERVER_ERROR,
+              message: `Worker assignment could not be created for work order ${assignment.getWorkOrderId()} and worker ${assignment.getWorkerId()}.`,
+            });
+          }
+
+          insertedRows.push(res[0]);
+        }
+
+        return insertedRows;
+      });
 
       if (results.length === 0) {
         throw new RpcException({
@@ -45,8 +69,8 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
       }
 
       return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
-          results,
-        );
+        results,
+      );
     } catch (error) {
       throw error;
     }
@@ -57,9 +81,16 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
   ): Promise<WorkOrderWorkerAssignmentResponse | null> {
     try {
       const query = `
-      SELECT id_asignacion AS assignment_id, id_orden_trabajo AS work_order_id, id_trabajador AS worker_id, id_rol AS rol_id, fecha_asignacion AS assigned_date
-      FROM work_orders.asignacion_orden_trabajo_trabajador
-      WHERE id_trabajador = $1;
+        SELECT
+          id_asignacion AS assignment_id,
+          id_orden_trabajo AS work_order_id,
+          id_trabajador AS worker_id,
+          id_rol AS rol_id,
+          fecha_asignacion AS assigned_date
+        FROM work_orders.asignacion_orden_trabajo_trabajador
+        WHERE id_trabajador = $1
+        ORDER BY fecha_asignacion DESC, id_asignacion DESC
+        LIMIT 1;
       `;
       const values = [workerId];
 
@@ -74,8 +105,8 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
       }
 
       return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseToWorkOrderWorkerAssignmentResponse(
-          result[0],
-        );
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -86,9 +117,15 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null> {
     try {
       const query = `
-      SELECT id_asignacion AS assignment_id, id_orden_trabajo AS work_order_id, id_trabajador AS worker_id, id_rol AS rol_id, fecha_asignacion AS assigned_date
-      FROM work_orders.asignacion_orden_trabajo_trabajador
-      WHERE id_orden_trabajo = $1;
+        SELECT
+          id_asignacion AS assignment_id,
+          id_orden_trabajo AS work_order_id,
+          id_trabajador AS worker_id,
+          id_rol AS rol_id,
+          fecha_asignacion AS assigned_date
+        FROM work_orders.asignacion_orden_trabajo_trabajador
+        WHERE id_orden_trabajo = $1
+        ORDER BY fecha_asignacion DESC, id_asignacion DESC;
       `;
       const values = [workOrderId];
 
@@ -106,8 +143,8 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence
       }
 
       return WorkOrderWorkerAssignmentAdapter.fromWorkOrderWorkerAssignmentSqlResponseListToWorkOrderWorkerAssignmentResponseList(
-          results,
-        );
+        results,
+      );
     } catch (error) {
       throw error;
     }

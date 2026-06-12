@@ -23,14 +23,14 @@ export class WorkOrderAttachmentsController {
   }
 
   @MessagePattern('work-order-attachments.get_work_order_attachment_by_id')
-  async getWorkOrderAttachmentById(@Payload() attachmentId: number) {
+  async getWorkOrderAttachmentById(@Payload() attachmentId: string) {
     return this.workOrderAttachmentsService.getWorkOrderAttachmentById(
       attachmentId,
     );
   }
 
   @MessagePattern('work-order-attachments.delete_work_order_attachment')
-  async deleteWorkOrderAttachment(@Payload() attachmentId: number) {
+  async deleteWorkOrderAttachment(@Payload() attachmentId: string) {
     return this.workOrderAttachmentsService.deleteWorkOrderAttachment(
       attachmentId,
     );
@@ -40,7 +40,7 @@ export class WorkOrderAttachmentsController {
   async updateWorkOrderAttachment(
     @Payload()
     data: {
-      attachmentId: number;
+      attachmentId: string;
       attachment: UpdateWorkOrderAttachmentsRequest;
     },
   ) {

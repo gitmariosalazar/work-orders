@@ -1,5 +1,5 @@
 export interface WorkOrderAttachmentsResponse {
-  attachmentId: number;
+  attachmentId: string;
   workOrderId: string;
   fileName: string;
   fileType: string;

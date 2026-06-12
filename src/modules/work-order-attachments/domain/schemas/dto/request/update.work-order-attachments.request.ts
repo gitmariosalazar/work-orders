@@ -1,11 +1,11 @@
 export class UpdateWorkOrderAttachmentsRequest {
-  workOrderId: number;
+  workOrderId: string;
   fileName?: string;
   fileType?: string;
   fileUrl?: string;
 
   constructor(
-    workOrderId: number,
+    workOrderId: string,
     fileName?: string,
     fileType?: string,
     fileUrl?: string,

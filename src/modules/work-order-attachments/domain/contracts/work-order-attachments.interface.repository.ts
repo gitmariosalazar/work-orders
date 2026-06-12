@@ -7,14 +7,14 @@ export interface InterfaceWorkOrderAttachmentsRepository {
   ): Promise<WorkOrderAttachmentsResponse | null>;
 
   getWorkOrderAttachmentById(
-    attachmentId: number,
+    attachmentId: string,
   ): Promise<WorkOrderAttachmentsResponse | null>;
 
   updateWorkOrderAttachment(
-    attachmentId: number,
+    attachmentId: string,
     attachment: WorkOrderAttachmentModel,
   ): Promise<WorkOrderAttachmentsResponse | null>;
-  deleteWorkOrderAttachment(attachmentId: number): Promise<boolean>;
+  deleteWorkOrderAttachment(attachmentId: string): Promise<boolean>;
 
   findAttachmentsByWorkOrderId(
     workOrderId: string,

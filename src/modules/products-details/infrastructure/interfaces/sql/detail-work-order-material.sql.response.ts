@@ -1,5 +1,5 @@
 export interface DetailWorkOrderMaterialSqlResponse {
-  detail_work_order_material_id: number;
+  detail_work_order_material_id: string;
   work_order_id: string;
   material_id: number;
   quantity: number;

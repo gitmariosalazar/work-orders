@@ -1,7 +1,5 @@
-import { UUID } from 'crypto';
-
 export interface WorkOrderSQLResponse {
-  work_order_id: number;
+  work_order_id: string;
   order_code: string;
   work_type_id: number;
   priority_id: number;
@@ -9,12 +7,12 @@ export interface WorkOrderSQLResponse {
   creation_date?: Date;
   assignation_date?: Date;
   completion_date?: Date;
-  status: number;
+  status: string;
   description?: string;
   location?: string;
-  created_user_id?: UUID;
-  assigned_user_id?: UUID;
-  completed_user_id?: UUID;
+  created_user_id?: string;
+  assigned_user_id?: string;
+  completed_user_id?: string;
   coordinates?: string;
   metadata?: string;
   cadastral_key?: string;

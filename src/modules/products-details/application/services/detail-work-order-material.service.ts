@@ -9,9 +9,7 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../settings/environments/status-code';
 
 @Injectable()
-export class DetailWorkOrderMaterialService
-  implements InterfaceDetailWorkOrderMaterialUseCase
-{
+export class DetailWorkOrderMaterialService implements InterfaceDetailWorkOrderMaterialUseCase {
   constructor(
     @Inject('DetailWorkOrderMaterialRepository')
     private readonly detailWorkOrderMaterialRepository: InterfaceDetailWorkOrderMaterialRepository,
@@ -111,9 +109,9 @@ export class DetailWorkOrderMaterialService
 
       if (!result) {
         throw new RpcException({
-          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          statusCode: statusCode.NOT_FOUND,
           message:
-            'Failed to delete detail work order materials for the given workOrderId',
+            'No active detail work order materials found for the given workOrderId',
         });
       }
 

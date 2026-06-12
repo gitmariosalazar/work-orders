@@ -6,11 +6,11 @@ export interface InterfaceWorkOrderObservationRepository {
     workOrderObservation: WorkOrderObservationModel,
   ): Promise<WorkOrderObservationResponse | null>;
   update(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
     workOrderObservation: Partial<WorkOrderObservationModel>,
   ): Promise<WorkOrderObservationResponse | null>;
   getById(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
   ): Promise<WorkOrderObservationResponse | null>;
   getByWorkOrderId(
     workOrderId: string,

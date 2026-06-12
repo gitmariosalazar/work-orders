@@ -7,11 +7,11 @@ export interface InterfaceWorkOrderObservationUseCase {
     workOrderObservation: CreateWorkOrderObservationRequest,
   ): Promise<WorkOrderObservationResponse | null>;
   updateWorkOrderObservation(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
     workOrderObservation: Partial<UpdateWorkOrderObservationRequest>,
   ): Promise<WorkOrderObservationResponse | null>;
   getWorkOrderObservationById(
-    workOrderObservationId: number,
+    workOrderObservationId: string,
   ): Promise<WorkOrderObservationResponse | null>;
   getWorkOrderObservationsByWorkOrderId(
     workOrderId: string,

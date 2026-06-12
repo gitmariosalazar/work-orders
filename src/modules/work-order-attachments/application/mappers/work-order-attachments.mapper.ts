@@ -8,7 +8,7 @@ export class WorkOrderAttachmentMapper {
     request: CreateWorkOrderAttachmentsRequest,
   ): WorkOrderAttachmentModel {
     return new WorkOrderAttachmentModel(
-      0,
+      '',
       request.workOrderId,
       request.fileName,
       request.fileType,

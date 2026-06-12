@@ -1,9 +1,7 @@
-import { UUID } from 'crypto';
-
 export interface WorkOrderObservationSQLResponse {
-  observation_id: number;
-  work_order_id: UUID;
+  observation_id: string;
+  work_order_id: string;
   description: string;
-  worker_id: number;
+  worker_id: string;
   created_at?: Date;
 }

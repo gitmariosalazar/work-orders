@@ -1,5 +1,5 @@
 export interface DetailWorkOrderMaterialResponse {
-  detailWorkOrderMaterialId: number;
+  detailWorkOrderMaterialId: string;
   workOrderId: string;
   materialId: number;
   quantity: number;

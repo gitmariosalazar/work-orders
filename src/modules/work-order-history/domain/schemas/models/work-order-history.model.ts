@@ -2,10 +2,10 @@ export class WorkOrderHistoryModel {
   private constructor(
     private readonly props: {
       workOrderHistoryId?: number;
-      workOrderId: number;
-      statusId?: number;
+      workOrderId: string;
+      statusId?: string;
       changeDate: Date;
-      userId: number;
+      userId: string;
       changeDescription?: string;
       cadastralKey?: string;
       orderCode?: string;
@@ -13,10 +13,10 @@ export class WorkOrderHistoryModel {
   ) {}
   public static create(props: {
     workOrderHistoryId?: number;
-    workOrderId: number;
-    statusId?: number;
+    workOrderId: string;
+    statusId?: string;
     changeDate: Date;
-    userId: number;
+    userId: string;
     changeDescription?: string;
     cadastralKey?: string;
     orderCode?: string;
@@ -28,11 +28,11 @@ export class WorkOrderHistoryModel {
     return this.props.workOrderHistoryId;
   }
 
-  public get workOrderId(): number {
+  public get workOrderId(): string {
     return this.props.workOrderId;
   }
 
-  public get statusId(): number | undefined {
+  public get statusId(): string | undefined {
     return this.props.statusId;
   }
 
@@ -40,7 +40,7 @@ export class WorkOrderHistoryModel {
     return this.props.changeDate;
   }
 
-  public get userId(): number {
+  public get userId(): string {
     return this.props.userId;
   }
 
@@ -64,11 +64,11 @@ export class WorkOrderHistoryModel {
     this.props.changeDate = value;
   }
 
-  public set statusId(value: number | undefined) {
+  public set statusId(value: string | undefined) {
     this.props.statusId = value;
   }
 
-  public set userId(value: number) {
+  public set userId(value: string) {
     this.props.userId = value;
   }
 
@@ -80,7 +80,7 @@ export class WorkOrderHistoryModel {
     this.props.orderCode = value;
   }
 
-  public set workOrderId(value: number) {
+  public set workOrderId(value: string) {
     this.props.workOrderId = value;
   }
 

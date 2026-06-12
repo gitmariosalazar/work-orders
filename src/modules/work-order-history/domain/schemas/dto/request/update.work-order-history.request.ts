@@ -1,14 +1,14 @@
 export class UpdateWorkOrderHistoryRequest {
-  userId: number;
-  statusId?: number;
+  userId: string;
+  statusId?: string;
   changeDate?: Date;
   changeDescription?: string;
   cadastralKey?: string;
   orderCode?: string;
 
   constructor(
-    userId: number,
-    statusId?: number,
+    userId: string,
+    statusId?: string,
     changeDate?: Date,
     changeDescription?: string,
     cadastralKey?: string,

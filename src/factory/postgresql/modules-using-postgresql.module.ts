@@ -6,6 +6,7 @@ import { PostgreSqlWorkOrderObservationModule } from '../../modules/observations
 import { PostgreSqlDetailWorkOrderMaterialModule } from '../../modules/products-details/infrastructure/modules/postgresql/postgresql.detail-work-order-material.module';
 import { PostgreSqlWorkOrderWorkerAssignmentModule } from '../../modules/worker-assignment/infrastructure/modules/postgresql/postgresql.work-order-worker-assignment.module';
 import { PostgreSqlWorkOrderAttachmentsModule } from '../../modules/work-order-attachments/infrastructure/modules/postgresql/postgresql.work-order-attachments.module';
+import { PostgreSqlProcessWorkOrderModule } from '../../modules/process-work-order/infrastructure/modules/postgresql/postgresql.process-work-order.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { PostgreSqlWorkOrderAttachmentsModule } from '../../modules/work-order-a
     PostgreSqlDetailWorkOrderMaterialModule,
     PostgreSqlWorkOrderWorkerAssignmentModule,
     PostgreSqlWorkOrderAttachmentsModule,
+    PostgreSqlProcessWorkOrderModule,
   ],
   controllers: [],
   providers: [],

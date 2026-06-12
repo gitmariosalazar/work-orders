@@ -1,5 +1,5 @@
 export interface WorkOrderAttachmentsSqlResponse {
-  attachment_id: number;
+  attachment_id: string;
   work_order_id: string;
   file_name: string;
   file_type: string;
