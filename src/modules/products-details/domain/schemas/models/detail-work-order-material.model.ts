@@ -5,6 +5,8 @@ export class DetailWorkOrderMaterialModel {
   private quantity: number;
   private unitCost: number;
   private subtotal: number;
+  private code: string;
+  private name: string;
 
   constructor(
     detailWorkOrderMaterialId: string,
@@ -13,6 +15,8 @@ export class DetailWorkOrderMaterialModel {
     quantity: number,
     unitCost: number,
     subtotal: number,
+    code: string,
+    name: string,
   ) {
     this.detailWorkOrderMaterialId = detailWorkOrderMaterialId;
     this.workOrderId = workOrderId;
@@ -20,6 +24,8 @@ export class DetailWorkOrderMaterialModel {
     this.quantity = quantity;
     this.unitCost = unitCost;
     this.subtotal = subtotal;
+    this.code = code;
+    this.name = name;
   }
 
   public getDetailWorkOrderMaterialId(): string {
@@ -70,6 +76,21 @@ export class DetailWorkOrderMaterialModel {
     this.detailWorkOrderMaterialId = detailWorkOrderMaterialId;
   }
 
+  public getCode(): string {
+    return this.code;
+  }
+
+  public getName(): string {
+    return this.name;
+  }
+
+  setCode(code: string): void {
+    this.code = code;
+  }
+
+  setName(name: string): void {
+    this.name = name;
+  }
   toJSON() {
     return {
       detailWorkOrderMaterialId: this.detailWorkOrderMaterialId,
@@ -78,6 +99,8 @@ export class DetailWorkOrderMaterialModel {
       quantity: this.quantity,
       unitCost: this.unitCost,
       subtotal: this.subtotal,
+      code: this.code,
+      name: this.name,
     };
   }
 }

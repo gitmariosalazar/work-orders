@@ -8,13 +8,19 @@ import {
 } from '../../../../../../shared/connections/database/abstract/abstract.database';
 import { InterfaceProcessWorkOrderRepository } from '../../../../domain/contracts/process-work-order.interface.repository';
 import { ProcessWorkOrderModel } from '../../../../domain/schemas/models/process-work-order.model';
-import { ProcessWorkOrderResponse } from '../../../../domain/schemas/dto/response/process-work-order.response';
+import {
+  ProcessWorkOrderBatchResponse,
+  ProcessWorkOrderResponse,
+} from '../../../../domain/schemas/dto/response/process-work-order.response';
 import {
   AddAdditionalCostCommand,
+  AddAdditionalCostsBatchCommand,
   AddPreparationInspectionDetailCommand,
   AddQualityControlDetailCommand,
   AddWorkOrderAttachmentCommand,
   AddWorkOrderMaterialCommand,
+  AddWorkOrderMaterialsBatchCommand,
+  AddWorkersBatchToWorkOrderCommand,
   AddWorkerToWorkOrderCommand,
   AssignWorkOrderToCrewCommand,
   AssignWorkOrderToWorkerCommand,
@@ -465,9 +471,11 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             id_material,
             cantidad,
             costo_unitario,
+            codigo,
+            nombre,
             created_by
           )
-          VALUES ($1::uuid, $2, $3, $4, $5::uuid)
+          VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::uuid)
           RETURNING
             id_detalle_material::TEXT AS record_id,
             id_orden_trabajo::TEXT AS work_order_id,
@@ -478,6 +486,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           addWorkOrderMaterial.materialId,
           addWorkOrderMaterial.quantity,
           addWorkOrderMaterial.unitCost,
+          addWorkOrderMaterial.codigoMaterial,
+          addWorkOrderMaterial.nombreMaterial,
           addWorkOrderMaterial.createdByUserId,
         ],
       );
@@ -551,6 +561,71 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           unitCost: addAdditionalCost.unitCost,
         },
       );
+    });
+  }
+
+  async addAdditionalCostsBatch(
+    cmd: AddAdditionalCostsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    return this.databaseService.transaction(async (client) => {
+      const items: ProcessWorkOrderResponse[] = [];
+
+      for (const cost of cmd.costs) {
+        const result = await client.query<GenericRecordRow>(
+          `
+            INSERT INTO work_orders.costo_adicional_orden (
+              id_orden_trabajo,
+              concepto,
+              cantidad,
+              costo_unitario,
+              created_by
+            )
+            VALUES ($1::uuid, $2, $3, $4, $5::uuid)
+            RETURNING
+              id_costo_adicional::TEXT AS record_id,
+              id_orden_trabajo::TEXT   AS work_order_id,
+              created_at               AS processed_at;
+          `,
+          [
+            cmd.workOrderId,
+            cost.concept,
+            cost.quantity,
+            cost.unitCost,
+            cmd.createdByUserId,
+          ],
+        );
+
+        if (result.length === 0) {
+          throw new RpcException({
+            statusCode: statusCode.INTERNAL_SERVER_ERROR,
+            message: `Additional cost "${cost.concept}" could not be inserted.`,
+          });
+        }
+
+        items.push(
+          this.mapGenericResponse(
+            'add_additional_cost',
+            result[0].record_id,
+            result[0].work_order_id,
+            cmd.createdByUserId,
+            result[0].processed_at,
+            {
+              concept: cost.concept,
+              quantity: cost.quantity,
+              unitCost: cost.unitCost,
+            },
+          ),
+        );
+      }
+
+      return {
+        action: 'add_additional_costs_batch',
+        workOrderId: cmd.workOrderId,
+        createdByUserId: cmd.createdByUserId,
+        processedAt: items[items.length - 1].processedAt,
+        count: items.length,
+        items,
+      };
     });
   }
 
@@ -906,11 +981,17 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     // Incluye tanto los estados genéricos como los diferenciados por tipo.
     const RELEVANT = new Set([
       // Genéricos (retrocompatibilidad)
-      'EN_PROCESO', 'EJECUTADA', 'COMPLETADA',
+      'EN_PROCESO',
+      'EJECUTADA',
+      'COMPLETADA',
       // Flujo INSPECCION (exclusivo acometidas)
-      'EN_PROCESO_INSPECCION', 'INSPECCION_EJECUTADA', 'INSPECCION_COMPLETADA',
+      'EN_PROCESO_INSPECCION',
+      'INSPECCION_EJECUTADA',
+      'INSPECCION_COMPLETADA',
       // Flujo INSTALACION (exclusivo acometidas)
-      'EN_PROCESO_INSTALACION', 'INSTALACION_EJECUTADA', 'INSTALACION_COMPLETADA',
+      'EN_PROCESO_INSTALACION',
+      'INSTALACION_EJECUTADA',
+      'INSTALACION_COMPLETADA',
     ]);
     if (!RELEVANT.has(newStatus)) return;
 
@@ -940,11 +1021,22 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     const row = rows[0];
 
     // Solo aplica a OTs originadas por el módulo de Acometidas
-    if (row.origen !== 'SOLICITUD' || !row.id_entidad_origen || !row.estado_solicitud) return;
+    if (
+      row.origen !== 'SOLICITUD' ||
+      !row.id_entidad_origen ||
+      !row.estado_solicitud
+    )
+      return;
 
     const nombreTipo = (row.tipo_trabajo_nombre ?? '').trim().toUpperCase();
-    const esInspeccion  = nombreTipo.includes('INSPECCION') || nombreTipo.includes('INSPECCIÓN') || nombreTipo.includes('FACTIBILIDAD');
-    const esInstalacion = nombreTipo.includes('INSTALACION') || nombreTipo.includes('INSTALACIÓN') || nombreTipo.includes('MEDIDOR');
+    const esInspeccion =
+      nombreTipo.includes('INSPECCION') ||
+      nombreTipo.includes('INSPECCIÓN') ||
+      nombreTipo.includes('FACTIBILIDAD');
+    const esInstalacion =
+      nombreTipo.includes('INSTALACION') ||
+      nombreTipo.includes('INSTALACIÓN') ||
+      nombreTipo.includes('MEDIDOR');
 
     // ── Tabla de avance automático (estados diferenciados + genéricos) ───────
     //
@@ -970,8 +1062,10 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       ) {
         nuevoEstadoSolicitud = 'INSPECCION_EN_PROCESO';
       } else if (
-        (newStatus === 'INSPECCION_EJECUTADA' || newStatus === 'INSPECCION_COMPLETADA' ||
-         newStatus === 'EJECUTADA'            || newStatus === 'COMPLETADA') &&
+        (newStatus === 'INSPECCION_EJECUTADA' ||
+          newStatus === 'INSPECCION_COMPLETADA' ||
+          newStatus === 'EJECUTADA' ||
+          newStatus === 'COMPLETADA') &&
         row.estado_solicitud === 'INSPECCION_EN_PROCESO'
       ) {
         // EJECUTADA/COMPLETADA llevan a INFORME_EN_REVISION para que el analista
@@ -980,11 +1074,15 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       }
     } else if (esInstalacion) {
       if (
-        (newStatus === 'EN_PROCESO_INSTALACION' || newStatus === 'EN_PROCESO') &&
+        (newStatus === 'EN_PROCESO_INSTALACION' ||
+          newStatus === 'EN_PROCESO') &&
         row.estado_solicitud === 'OT_INSTALACION_EMITIDA'
       ) {
         nuevoEstadoSolicitud = 'INSTALACION_EN_PROCESO';
-      } else if (newStatus === 'COMPLETADA' && row.estado_solicitud === 'INSTALACION_EN_PROCESO') {
+      } else if (
+        newStatus === 'COMPLETADA' &&
+        row.estado_solicitud === 'INSTALACION_EN_PROCESO'
+      ) {
         nuevoEstadoSolicitud = 'INSTALACION_COMPLETADA';
       }
     }
@@ -1168,6 +1266,163 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     });
   }
 
+  async addWorkOrderMaterialsBatch(
+    cmd: AddWorkOrderMaterialsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    return this.databaseService.transaction(async (client) => {
+      const items: ProcessWorkOrderResponse[] = [];
+
+      for (const material of cmd.materials) {
+        const result = await client.query<GenericRecordRow>(
+          `
+            INSERT INTO work_orders.detalle_orden_trabajo_material (
+              id_orden_trabajo,
+              id_material,
+              cantidad,
+              costo_unitario,
+              codigo,
+              nombre,
+              created_by
+            )
+            VALUES ($1::uuid, $2, $3, $4, $5, $6, $7::uuid)
+            RETURNING
+              id_detalle_material::TEXT AS record_id,
+              id_orden_trabajo::TEXT    AS work_order_id,
+              created_at                AS processed_at;
+          `,
+          [
+            cmd.workOrderId,
+            material.materialId,
+            material.quantity,
+            material.unitCost,
+            material.codigoMaterial,
+            material.nombreMaterial,
+            cmd.createdByUserId,
+          ],
+        );
+
+        if (result.length === 0) {
+          throw new RpcException({
+            statusCode: statusCode.INTERNAL_SERVER_ERROR,
+            message: `Material ${material.materialId} could not be inserted.`,
+          });
+        }
+
+        items.push(
+          this.mapGenericResponse(
+            'add_work_order_material',
+            result[0].record_id,
+            result[0].work_order_id,
+            cmd.createdByUserId,
+            result[0].processed_at,
+            {
+              materialId: material.materialId,
+              quantity: material.quantity,
+              unitCost: material.unitCost,
+              codigoMaterial: material.codigoMaterial,
+              nombreMaterial: material.nombreMaterial,
+            },
+          ),
+        );
+      }
+
+      return {
+        action: 'add_work_order_materials_batch',
+        workOrderId: cmd.workOrderId,
+        createdByUserId: cmd.createdByUserId,
+        processedAt: items[items.length - 1].processedAt,
+        count: items.length,
+        items,
+      };
+    });
+  }
+
+  async addWorkersBatchToWorkOrder(
+    cmd: AddWorkersBatchToWorkOrderCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    return this.databaseService.transaction(async (client) => {
+      const items: ProcessWorkOrderResponse[] = [];
+
+      for (const worker of cmd.workers) {
+        const result = await client.query<GenericRecordRow>(
+          `
+            INSERT INTO work_orders.asignacion_trabajador_orden (
+              id_orden_trabajo,
+              id_trabajador,
+              id_rol,
+              es_responsable,
+              created_by
+            )
+            VALUES ($1::uuid, $2::uuid, $3, $4, $5::uuid)
+            ON CONFLICT (id_orden_trabajo, id_trabajador) DO UPDATE
+              SET is_deleted     = FALSE,
+                  id_rol         = EXCLUDED.id_rol,
+                  es_responsable = EXCLUDED.es_responsable,
+                  updated_at     = NOW()
+            RETURNING
+              id_asignacion::TEXT      AS record_id,
+              id_orden_trabajo::TEXT   AS work_order_id,
+              created_at               AS processed_at;
+          `,
+          [
+            cmd.workOrderId,
+            worker.workerId,
+            worker.roleId ?? null,
+            worker.isResponsible ?? false,
+            cmd.assignedByUserId,
+          ],
+        );
+
+        if (result.length === 0) {
+          throw new RpcException({
+            statusCode: statusCode.INTERNAL_SERVER_ERROR,
+            message: `Worker ${worker.workerId} could not be added.`,
+          });
+        }
+
+        // Si es responsable, actualizar el campo desnormalizado de la OT
+        if (worker.isResponsible) {
+          await client.query(
+            `
+              UPDATE work_orders.orden_trabajo
+              SET usuario_asignado   = $2::uuid,
+                  usuario_asignacion = $3::uuid,
+                  fecha_asignacion   = COALESCE(fecha_asignacion, NOW()),
+                  updated_at         = NOW()
+              WHERE id_orden_trabajo = $1::uuid
+                AND is_deleted = FALSE;
+            `,
+            [cmd.workOrderId, worker.workerId, cmd.assignedByUserId],
+          );
+        }
+
+        items.push(
+          this.mapGenericResponse(
+            'add_worker_to_work_order',
+            result[0].record_id,
+            result[0].work_order_id,
+            cmd.assignedByUserId,
+            result[0].processed_at,
+            {
+              workerId: worker.workerId,
+              roleId: worker.roleId ?? null,
+              isResponsible: worker.isResponsible ?? false,
+            },
+          ),
+        );
+      }
+
+      return {
+        action: 'add_workers_batch_to_work_order',
+        workOrderId: cmd.workOrderId,
+        createdByUserId: cmd.assignedByUserId,
+        processedAt: items[items.length - 1].processedAt,
+        count: items.length,
+        items,
+      };
+    });
+  }
+
   async removeWorkerFromWorkOrder(
     cmd: RemoveWorkerFromWorkOrderCommand,
   ): Promise<ProcessWorkOrderResponse | null> {
@@ -1234,6 +1489,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             ceo.nombre                                                      AS estado_label,
             ot.origen,
             coo.nombre                                                      AS origen_label,
+            ot.id_entidad_origen,
 
             -- ── Clasificación ─────────────────────────────────────────────────────────
             tt.nombre                                                       AS tipo_trabajo,
@@ -1329,6 +1585,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
                     'id_material',      dotm.id_material,
                     'cantidad',         dotm.cantidad,
                     'costo_unitario',   dotm.costo_unitario,
+                    'codigo_material',  dotm.codigo,
+                    'nombre_material',  dotm.nombre,
                     'subtotal',         dotm.subtotal
                 )) FILTER (WHERE dotm.id_detalle_material IS NOT NULL),
                 '[]'::jsonb

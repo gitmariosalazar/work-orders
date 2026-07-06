@@ -48,7 +48,25 @@ export interface AddWorkOrderMaterialCommand {
   materialId: number;
   quantity: number;
   unitCost: number;
+  codigoMaterial: string;
+  nombreMaterial: string;
   createdByUserId: string;
+}
+
+/** Item dentro de un lote de materiales */
+export interface WorkOrderMaterialItem {
+  materialId: number;
+  quantity: number;
+  unitCost: number;
+  codigoMaterial: string;
+  nombreMaterial: string;
+}
+
+/** Agrega uno o más materiales a la OT en una sola transacción */
+export interface AddWorkOrderMaterialsBatchCommand {
+  workOrderId: string;
+  createdByUserId: string;
+  materials: WorkOrderMaterialItem[];
 }
 
 export interface AddAdditionalCostCommand {
@@ -57,6 +75,20 @@ export interface AddAdditionalCostCommand {
   quantity: number;
   unitCost: number;
   createdByUserId: string;
+}
+
+/** Item dentro de un lote de costos adicionales */
+export interface AdditionalCostItem {
+  concept: string;
+  quantity: number;
+  unitCost: number;
+}
+
+/** Agrega uno o más costos adicionales a la OT en una sola transacción */
+export interface AddAdditionalCostsBatchCommand {
+  workOrderId: string;
+  createdByUserId: string;
+  costs: AdditionalCostItem[];
 }
 
 export interface AddWorkOrderAttachmentCommand {
@@ -101,6 +133,20 @@ export interface AddWorkerToWorkOrderCommand {
   isResponsible?: boolean;
   /** UUID del usuario que realiza la asignación */
   assignedByUserId: string;
+}
+
+/** Item dentro de un lote de trabajadores */
+export interface WorkOrderWorkerItem {
+  workerId: string;
+  roleId?: number | null;
+  isResponsible?: boolean;
+}
+
+/** Agrega uno o más trabajadores a la OT en una sola transacción */
+export interface AddWorkersBatchToWorkOrderCommand {
+  workOrderId: string;
+  assignedByUserId: string;
+  workers: WorkOrderWorkerItem[];
 }
 
 export interface RemoveWorkerFromWorkOrderCommand {

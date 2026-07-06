@@ -4,10 +4,13 @@ import { ProcessWorkOrderService } from '../../application/services/process-work
 import { ProcessWorkOrderRequest } from '../../domain/schemas/dto/request/process-work-order.request';
 import {
   AddAdditionalCostCommand,
+  AddAdditionalCostsBatchCommand,
   AddPreparationInspectionDetailCommand,
   AddQualityControlDetailCommand,
   AddWorkOrderAttachmentCommand,
   AddWorkOrderMaterialCommand,
+  AddWorkOrderMaterialsBatchCommand,
+  AddWorkersBatchToWorkOrderCommand,
   AddWorkerToWorkOrderCommand,
   AssignWorkOrderToCrewCommand,
   AssignWorkOrderToWorkerCommand,
@@ -113,9 +116,21 @@ export class ProcessWorkOrderController {
     );
   }
 
+  @MessagePattern(
+    'work-orders.process-work-order.add-work-order-materials-batch',
+  )
+  async addWorkOrderMaterialsBatch(cmd: AddWorkOrderMaterialsBatchCommand) {
+    return this.processWorkOrderService.addWorkOrderMaterialsBatch(cmd);
+  }
+
   @MessagePattern('work-orders.process-work-order.add-additional-cost')
   async addAdditionalCost(addAdditionalCost: AddAdditionalCostCommand) {
     return this.processWorkOrderService.addAdditionalCost(addAdditionalCost);
+  }
+
+  @MessagePattern('work-orders.process-work-order.add-additional-costs-batch')
+  async addAdditionalCostsBatch(cmd: AddAdditionalCostsBatchCommand) {
+    return this.processWorkOrderService.addAdditionalCostsBatch(cmd);
   }
 
   @MessagePattern('work-orders.process-work-order.add-work-order-attachment')
@@ -171,6 +186,11 @@ export class ProcessWorkOrderController {
   @MessagePattern('work-orders.process-work-order.add-worker')
   async addWorkerToWorkOrder(cmd: AddWorkerToWorkOrderCommand) {
     return this.processWorkOrderService.addWorkerToWorkOrder(cmd);
+  }
+
+  @MessagePattern('work-orders.process-work-order.add-workers-batch')
+  async addWorkersBatchToWorkOrder(cmd: AddWorkersBatchToWorkOrderCommand) {
+    return this.processWorkOrderService.addWorkersBatchToWorkOrder(cmd);
   }
 
   @MessagePattern('work-orders.process-work-order.remove-worker')

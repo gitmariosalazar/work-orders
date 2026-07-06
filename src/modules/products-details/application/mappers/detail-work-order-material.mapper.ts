@@ -32,6 +32,8 @@ export class DetailWorkOrderMaterialMapper {
       request.quantity,
       request.unitCost,
       request.quantity * request.unitCost,
+      request.code,
+      request.name,
     );
   }
 

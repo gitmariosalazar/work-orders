@@ -23,6 +23,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence implements InterfaceDe
         id_material,
         cantidad,
         costo_unitario,
+        codigo,
+        nombre,
         created_by
       )
       SELECT
@@ -30,6 +32,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence implements InterfaceDe
         $2,
         $3,
         $4,
+        $5,
+        $6,
         ot.created_by
       FROM work_orders.orden_trabajo ot
       WHERE ot.id_orden_trabajo = $1
@@ -40,6 +44,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence implements InterfaceDe
         id_material AS material_id,
         cantidad AS quantity,
         costo_unitario AS unit_cost,
+        codigo AS code,
+        nombre AS name,
         subtotal;
       `;
 
@@ -54,6 +60,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence implements InterfaceDe
             detailWorkOrderMaterial.getMaterialId(),
             detailWorkOrderMaterial.getQuantity(),
             detailWorkOrderMaterial.getUnitCost(),
+            detailWorkOrderMaterial.getCode(),
+            detailWorkOrderMaterial.getName(),
           ];
 
           const result = await client.query<DetailWorkOrderMaterialSqlResponse>(
@@ -100,6 +108,8 @@ export class DetailWorkOrderMaterialPostgreSqlPersistence implements InterfaceDe
         id_material AS material_id,
         cantidad AS quantity,
         costo_unitario AS unit_cost,
+        codigo AS code,
+        nombre AS name,
         subtotal
       FROM work_orders.detalle_orden_trabajo_material
       WHERE id_orden_trabajo = $1

@@ -3,15 +3,21 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../settings/environments/status-code';
 import { InterfaceProcessWorkOrderRepository } from '../../domain/contracts/process-work-order.interface.repository';
 import { ProcessWorkOrderRequest } from '../../domain/schemas/dto/request/process-work-order.request';
-import { ProcessWorkOrderResponse } from '../../domain/schemas/dto/response/process-work-order.response';
+import {
+  ProcessWorkOrderBatchResponse,
+  ProcessWorkOrderResponse,
+} from '../../domain/schemas/dto/response/process-work-order.response';
 import { ProcessWorkOrderMapper } from '../mappers/process-work-order.mapper';
 import { InterfaceProcessWorkOrderUseCase } from '../usecases/process-work-order.use-case.interface';
 import {
   AddAdditionalCostCommand,
+  AddAdditionalCostsBatchCommand,
   AddPreparationInspectionDetailCommand,
   AddQualityControlDetailCommand,
   AddWorkOrderAttachmentCommand,
   AddWorkOrderMaterialCommand,
+  AddWorkOrderMaterialsBatchCommand,
+  AddWorkersBatchToWorkOrderCommand,
   AddWorkerToWorkOrderCommand,
   AssignWorkOrderToCrewCommand,
   AssignWorkOrderToWorkerCommand,
@@ -271,6 +277,45 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
     }
   }
 
+  async addWorkOrderMaterialsBatch(
+    cmd: AddWorkOrderMaterialsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    try {
+      this.validateString(cmd.workOrderId, 'workOrderId');
+      this.validateString(cmd.createdByUserId, 'createdByUserId');
+
+      if (!Array.isArray(cmd.materials) || cmd.materials.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'materials must be a non-empty array.',
+        });
+      }
+
+      cmd.materials.forEach((m, i) => {
+        this.validatePositiveInteger(
+          m.materialId,
+          `materials[${i}].materialId`,
+        );
+        this.validatePositiveNumber(m.quantity, `materials[${i}].quantity`);
+        this.validatePositiveNumber(m.unitCost, `materials[${i}].unitCost`);
+      });
+
+      const result =
+        await this.processWorkOrderRepository.addWorkOrderMaterialsBatch(cmd);
+
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Work order materials could not be created.',
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async addAdditionalCost(
     addAdditionalCost: AddAdditionalCostCommand,
   ): Promise<ProcessWorkOrderResponse | null> {
@@ -290,6 +335,42 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         throw new RpcException({
           statusCode: statusCode.INTERNAL_SERVER_ERROR,
           message: 'Additional cost could not be created.',
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addAdditionalCostsBatch(
+    cmd: AddAdditionalCostsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    try {
+      this.validateString(cmd.workOrderId, 'workOrderId');
+      this.validateString(cmd.createdByUserId, 'createdByUserId');
+
+      if (!Array.isArray(cmd.costs) || cmd.costs.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'costs must be a non-empty array.',
+        });
+      }
+
+      cmd.costs.forEach((c, i) => {
+        this.validateString(c.concept, `costs[${i}].concept`);
+        this.validatePositiveNumber(c.quantity, `costs[${i}].quantity`);
+        this.validatePositiveNumber(c.unitCost, `costs[${i}].unitCost`);
+      });
+
+      const result =
+        await this.processWorkOrderRepository.addAdditionalCostsBatch(cmd);
+
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Additional costs could not be created.',
         });
       }
 
@@ -449,6 +530,40 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         throw new RpcException({
           statusCode: statusCode.INTERNAL_SERVER_ERROR,
           message: 'Worker could not be added to work order.',
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async addWorkersBatchToWorkOrder(
+    cmd: AddWorkersBatchToWorkOrderCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null> {
+    try {
+      this.validateString(cmd.workOrderId, 'workOrderId');
+      this.validateString(cmd.assignedByUserId, 'assignedByUserId');
+
+      if (!Array.isArray(cmd.workers) || cmd.workers.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: 'workers must be a non-empty array.',
+        });
+      }
+
+      cmd.workers.forEach((w, i) => {
+        this.validateString(w.workerId, `workers[${i}].workerId`);
+      });
+
+      const result =
+        await this.processWorkOrderRepository.addWorkersBatchToWorkOrder(cmd);
+
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Workers could not be added to work order.',
         });
       }
 

@@ -10,6 +10,7 @@ export interface TrabajadorAsignadoSqlResult {
 export interface MaterialUtilizadoSqlResult {
   id_detalle: string; // UUID
   id_material: string; // UUID
+  codigo_material: string;
   nombre_material: string | null; // ALTER TABLE agregado
   descripcion: string | null; // ALTER TABLE agregado
   cantidad: number;
@@ -39,6 +40,8 @@ export interface CostoAdicionalSqlResult {
   cantidad: number;
   costo_unitario: number;
   total: number;
+  codigo: string | null; // ALTER TABLE agregado
+  nombre: string | null; // ALTER TABLE agregado
 }
 
 export interface HitoHistorialTimelineSqlResult {
@@ -67,6 +70,7 @@ export interface OrdenTrabajoDetalleSqlResult {
   estado_label: string;
   origen: string;
   origen_label: string;
+  id_entidad_origen: string | null;
 
   // ── Clasificación ──
   tipo_trabajo: string;

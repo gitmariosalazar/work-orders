@@ -1,11 +1,17 @@
 import { ProcessWorkOrderRequest } from '../../domain/schemas/dto/request/process-work-order.request';
-import { ProcessWorkOrderResponse } from '../../domain/schemas/dto/response/process-work-order.response';
+import {
+  ProcessWorkOrderBatchResponse,
+  ProcessWorkOrderResponse,
+} from '../../domain/schemas/dto/response/process-work-order.response';
 import {
   AddAdditionalCostCommand,
+  AddAdditionalCostsBatchCommand,
   AddPreparationInspectionDetailCommand,
   AddQualityControlDetailCommand,
   AddWorkOrderAttachmentCommand,
   AddWorkOrderMaterialCommand,
+  AddWorkOrderMaterialsBatchCommand,
+  AddWorkersBatchToWorkOrderCommand,
   AddWorkerToWorkOrderCommand,
   AssignWorkOrderToCrewCommand,
   AssignWorkOrderToWorkerCommand,
@@ -56,9 +62,19 @@ export interface InterfaceProcessWorkOrderUseCase {
   addWorkOrderMaterial(
     addWorkOrderMaterial: AddWorkOrderMaterialCommand,
   ): Promise<ProcessWorkOrderResponse | null>;
+
+  /** Agrega un lote de materiales en una sola transacción (mínimo 1 ítem) */
+  addWorkOrderMaterialsBatch(
+    cmd: AddWorkOrderMaterialsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null>;
   addAdditionalCost(
     addAdditionalCost: AddAdditionalCostCommand,
   ): Promise<ProcessWorkOrderResponse | null>;
+
+  /** Agrega un lote de costos adicionales en una sola transacción (mínimo 1 ítem) */
+  addAdditionalCostsBatch(
+    cmd: AddAdditionalCostsBatchCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null>;
   addWorkOrderAttachment(
     addWorkOrderAttachment: AddWorkOrderAttachmentCommand,
   ): Promise<ProcessWorkOrderResponse | null>;
@@ -82,6 +98,11 @@ export interface InterfaceProcessWorkOrderUseCase {
   addWorkerToWorkOrder(
     cmd: AddWorkerToWorkOrderCommand,
   ): Promise<ProcessWorkOrderResponse | null>;
+
+  /** Agrega un lote de trabajadores en una sola transacción (mínimo 1 ítem) */
+  addWorkersBatchToWorkOrder(
+    cmd: AddWorkersBatchToWorkOrderCommand,
+  ): Promise<ProcessWorkOrderBatchResponse | null>;
 
   /** Remueve un trabajador de la OT (borrado lógico) */
   removeWorkerFromWorkOrder(

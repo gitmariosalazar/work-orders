@@ -18,6 +18,16 @@ export interface ProcessWorkOrderResponse {
   metadata?: Record<string, string | number | boolean | null>;
 }
 
+/** Respuesta para operaciones en lote (materiales / trabajadores) */
+export interface ProcessWorkOrderBatchResponse {
+  action: string;
+  workOrderId: string;
+  createdByUserId: string;
+  processedAt: Date;
+  count: number;
+  items: ProcessWorkOrderResponse[];
+}
+
 // ==========================================
 // SUB-INTERFACES PARA ARREGLOS JSONB
 // ==========================================
@@ -34,6 +44,7 @@ export interface TrabajadorAsignado {
 export interface MaterialUtilizado {
   id_detalle: string; // UUID
   id_material: string; // UUID
+  codigo_material: string;
   nombre_material: string;
   cantidad: number;
   costo_unitario: number;
