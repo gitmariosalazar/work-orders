@@ -472,13 +472,35 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
   async resolveQualityControl(
     resolveQualityControl: ProcessWorkOrderRequest,
   ): Promise<ProcessWorkOrderResponse | null> {
-    return this.transitionWorkOrder(resolveQualityControl);
+    try {
+      const result = await this.transitionWorkOrder(resolveQualityControl);
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Quality control could not be resolved.',
+        });
+      }
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async completeWorkOrder(
     completeWorkOrder: ProcessWorkOrderRequest,
   ): Promise<ProcessWorkOrderResponse | null> {
-    return this.transitionWorkOrder(completeWorkOrder);
+    try {
+      const result = await this.transitionWorkOrder(completeWorkOrder);
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Work order could not be completed.',
+        });
+      }
+      return result;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async registerSatisfactionSurvey(
@@ -690,6 +712,12 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         await this.processWorkOrderRepository.getOrdenTrabajoDetalleByNumeroOrden(
           numeroOrden,
         );
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `Work order details not found for work order number: ${numeroOrden}`,
+        });
+      }
 
       return result;
     } catch (error) {
@@ -707,7 +735,12 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         await this.processWorkOrderRepository.getOrdenesTrabajoBySolicitudId(
           solicitudId,
         );
-
+      if (!result || result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `No work orders found for solicitudId: ${solicitudId}`,
+        });
+      }
       return result;
     } catch (error) {
       throw error;
@@ -724,6 +757,12 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         await this.processWorkOrderRepository.getOrdenTrabajoTrackingByNumeroOrden(
           numeroOrden,
         );
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `Tracking information not found for work order number: ${numeroOrden}`,
+        });
+      }
 
       return result;
     } catch (error) {
@@ -754,6 +793,13 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         limit,
         offset,
       );
+
+      if (!result || result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No work orders found.',
+        });
+      }
 
       return result;
     } catch (error) {

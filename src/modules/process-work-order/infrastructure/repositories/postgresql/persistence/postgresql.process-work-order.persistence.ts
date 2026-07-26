@@ -1629,13 +1629,13 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             )                                                               AS costos_adicionales,
 
             -- ── Resumen de costos ─────────────────────────────────────────────────────
-            COALESCE(SUM(dotm.subtotal) FILTER (WHERE dotm.id_detalle_material IS NOT NULL), 0)
+            (SELECT COALESCE(SUM(m.subtotal), 0) FROM work_orders.detalle_orden_trabajo_material m WHERE m.id_orden_trabajo = ot.id_orden_trabajo AND m.is_deleted = FALSE)
                 ::NUMERIC(12,2)                                             AS costo_total_materiales,
-            COALESCE(SUM(cao.total)     FILTER (WHERE cao.id_costo_adicional IS NOT NULL), 0)
+            (SELECT COALESCE(SUM(c.total), 0) FROM work_orders.costo_adicional_orden c WHERE c.id_orden_trabajo = ot.id_orden_trabajo AND c.is_deleted = FALSE)
                 ::NUMERIC(12,2)                                             AS costo_total_adicionales,
             (
-                COALESCE(SUM(dotm.subtotal) FILTER (WHERE dotm.id_detalle_material IS NOT NULL), 0) +
-                COALESCE(SUM(cao.total)     FILTER (WHERE cao.id_costo_adicional IS NOT NULL), 0)
+                (SELECT COALESCE(SUM(m.subtotal), 0) FROM work_orders.detalle_orden_trabajo_material m WHERE m.id_orden_trabajo = ot.id_orden_trabajo AND m.is_deleted = FALSE) +
+                (SELECT COALESCE(SUM(c.total), 0) FROM work_orders.costo_adicional_orden c WHERE c.id_orden_trabajo = ot.id_orden_trabajo AND c.is_deleted = FALSE)
             )::NUMERIC(12,2)                                               AS costo_total_orden,
 
             -- ── Checklist / Inspección  ───────────────────────────────────
@@ -1764,6 +1764,11 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       await this.databaseService.query<OrdenTrabajoDetalleSqlResult>(query, [
         numeroOrden,
       ]);
+
+    if (!result || result.length === 0) {
+      return null;
+    }
+
     const response =
       ProcessWorkOrderAdapter.fromOrdenTrabajoDetalleSqlResultToOrdenTrabajoDetalle(
         result[0],
@@ -1774,7 +1779,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
   async getOrdenTrabajoTrackingByNumeroOrden(
     numeroOrden: string,
   ): Promise<OrdenTrabajoTracking | null> {
-    const query: string = `
+    try {
+      const query: string = `
       SELECT
           -- ── Identificación ────────────────────────────────────────────────────────
           ot.id_orden_trabajo,
@@ -1926,15 +1932,26 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
       ORDER BY ot.fecha_creacion DESC;
       `;
-    const result =
-      await this.databaseService.query<OrdenTrabajoTrackingSqlResult>(query, [
-        numeroOrden,
-      ]);
-    const response =
-      ProcessWorkOrderAdapter.fromOrdenTrabajoTrackingSqlResultToOrdenTrabajoTracking(
-        result[0],
-      );
-    return response;
+      const result =
+        await this.databaseService.query<OrdenTrabajoTrackingSqlResult>(query, [
+          numeroOrden,
+        ]);
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: `Work order with number ${numeroOrden} not found.`,
+        });
+      }
+
+      const response =
+        ProcessWorkOrderAdapter.fromOrdenTrabajoTrackingSqlResultToOrdenTrabajoTracking(
+          result[0],
+        );
+      return response;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async getOrdenesTrabajoBySolicitudId(
