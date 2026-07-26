@@ -193,6 +193,183 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     }
   }
 
+  async createWorkOrderFromIncident(
+    incidentCode: string,
+    userIdCreator: string,
+    userIdAssignee: string,
+  ): Promise<ProcessWorkOrderResponse | null> {
+    return this.databaseService.transaction(async (client) => {
+      const query = `
+        WITH incidente_data AS (
+            SELECT 
+                im.incidente_id,
+                im.codigo_incidente,
+                im.descripcion_reporte,
+                COALESCE(im.direccion_referencia, a.direccion, a.referencia, 'Sin dirección') AS direccion,
+                im.coordenadas,
+                im.prioridad,
+                im.origen_reporte,
+                im.usuario_reporta_id,
+                im.datos_reportante,
+                a.cliente_id,
+                a.clave_catastral,
+                tim.nombre AS nombre_tipo_incidente
+            FROM public.incidente_medidor im
+            LEFT JOIN public.acometida a ON a.acometida_id = im.acometida_id
+            LEFT JOIN public.tipo_incidente_medidor tim ON tim.tipo_incidente_id = im.tipo_incidente_id
+            WHERE im.codigo_incidente = $1 -- O im.incidente_id = $1 dependiendo qué envíes
+        ),
+        prioridad_data AS (
+            SELECT id_prioridad FROM work_orders.prioridad_orden_trabajo 
+            WHERE UPPER(nivel) = (SELECT UPPER(prioridad) FROM incidente_data)
+            UNION ALL
+            SELECT MIN(id_prioridad) FROM work_orders.prioridad_orden_trabajo
+            LIMIT 1
+        ),
+        tipo_trabajo_data AS (
+            -- 1. Intentar hacer match exacto del nombre del tipo de incidente con el tipo de trabajo
+            SELECT id_tipo_trabajo FROM work_orders.tipo_trabajo 
+            WHERE UPPER(nombre) = (SELECT UPPER(nombre_tipo_incidente) FROM incidente_data)
+            UNION ALL
+            -- 2. Fallback: Si no existe un nombre idéntico, tomar el ID 1 por defecto
+            SELECT id_tipo_trabajo FROM work_orders.tipo_trabajo WHERE id_tipo_trabajo = 1 
+            LIMIT 1
+        ),
+        insert_ot AS (
+            INSERT INTO work_orders.orden_trabajo (
+                origen,
+                id_entidad_origen,
+                id_tipo_trabajo,
+                id_prioridad,
+                id_cliente,
+                clave_catastral,
+                estado,
+                direccion,
+                geom_punto,
+                created_by,
+                descripcion,
+                metadata,
+                usuario_asignado,
+                fecha_asignacion
+            )
+            SELECT 
+                'INCIDENTE',
+                i.incidente_id,
+                t.id_tipo_trabajo,
+                p.id_prioridad,
+                i.cliente_id,
+                i.clave_catastral,
+                CASE WHEN $3::uuid IS NOT NULL THEN 'ASIGNADA' ELSE 'NOTIFICADA' END,
+                i.direccion,
+                i.coordenadas,
+                COALESCE($2, i.usuario_reporta_id), -- Si envías $2 desde el token, usará ese ID.
+                i.descripcion_reporte,
+                jsonb_build_object(
+                    'codigo_incidente', i.codigo_incidente,
+                    'origen_reporte', i.origen_reporte,
+                    'datos_reportante', i.datos_reportante
+                ),
+                $3::uuid,
+                CASE WHEN $3::uuid IS NOT NULL THEN NOW() ELSE NULL END
+            FROM incidente_data i
+            CROSS JOIN prioridad_data p
+            CROSS JOIN tipo_trabajo_data t
+            RETURNING id_orden_trabajo, id_entidad_origen, codigo_orden, clave_catastral, estado, usuario_asignado, created_by, created_at
+        ),
+        insert_asignacion AS (
+            -- Si $3 no es nulo, inserta oficialmente en la tabla de asignaciones
+            INSERT INTO work_orders.asignacion_trabajador_orden (
+                id_orden_trabajo, 
+                id_trabajador, 
+                es_responsable, 
+                created_by
+            )
+            SELECT 
+                id_orden_trabajo, 
+                usuario_asignado, 
+                true, 
+                created_by
+            FROM insert_ot
+            WHERE usuario_asignado IS NOT NULL
+        ),
+        update_incidente AS (
+            UPDATE public.incidente_medidor im
+            SET estado = 'EN_INSPECCION',
+                codigo_orden_trabajo = iot.codigo_orden
+            FROM insert_ot iot
+            WHERE im.incidente_id = iot.id_entidad_origen
+              AND im.estado = 'REPORTADO'
+            RETURNING im.incidente_id, im.estado AS estado_nuevo
+        ),
+        insert_historial AS (
+            INSERT INTO public.historial_incidente (
+                incidente_id,
+                estado_anterior,
+                estado_nuevo,
+                usuario_id,
+                observacion
+            )
+            SELECT
+                ui.incidente_id,
+                'REPORTADO',
+                ui.estado_nuevo,
+                $2::uuid,
+                'Orden de Trabajo generada automáticamente'
+            FROM update_incidente ui
+        )
+        -- Retornar el ID y el código para que el backend lo use
+        SELECT 
+            id_orden_trabajo::TEXT AS record_id,
+            id_orden_trabajo::TEXT AS work_order_id,
+            codigo_orden AS order_code,
+            clave_catastral AS cadastral_key,
+            estado AS current_status,
+            estado AS current_status_name,
+            created_by::TEXT AS created_by_user_id,
+            created_at AS processed_at
+        FROM insert_ot;
+      `;
+
+      const rows = await client.query<{
+        record_id: string;
+        work_order_id: string;
+        order_code: string;
+        cadastral_key: string | null;
+        current_status: string;
+        current_status_name: string | null;
+        created_by_user_id: string;
+        processed_at: Date;
+      }>(query, [
+        incidentCode,
+        userIdCreator,
+        userIdAssignee ?? null,
+      ]);
+
+      if (rows.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Work order could not be created from incident.',
+        });
+      }
+
+      return this.mapSnapshotToResponse(
+        'create_work_order_from_incident',
+        rows[0].work_order_id,
+        rows[0].work_order_id,
+        rows[0].order_code,
+        rows[0].cadastral_key,
+        null,
+        null,
+        rows[0].current_status,
+        rows[0].current_status_name,
+        rows[0].created_by_user_id,
+        rows[0].created_by_user_id,
+        null,
+        rows[0].processed_at,
+      );
+    });
+  }
+
   async processWorkOrder(
     processWorkOrder: ProcessWorkOrderModel,
   ): Promise<ProcessWorkOrderResponse | null> {

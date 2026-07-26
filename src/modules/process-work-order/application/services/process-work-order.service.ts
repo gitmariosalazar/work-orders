@@ -68,6 +68,36 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
     }
   }
 
+  async createWorkOrderFromIncident(
+    incidentCode: string,
+    userIdCreator: string,
+    userIdAssignee: string,
+  ): Promise<ProcessWorkOrderResponse | null> {
+    try {
+      this.validateString(incidentCode, 'incidentCode');
+      this.validateString(userIdCreator, 'userIdCreator');
+      this.validateString(userIdAssignee, 'userIdAssignee');
+
+      const result =
+        await this.processWorkOrderRepository.createWorkOrderFromIncident(
+          incidentCode,
+          userIdCreator,
+          userIdAssignee,
+        );
+
+      if (!result) {
+        throw new RpcException({
+          statusCode: statusCode.INTERNAL_SERVER_ERROR,
+          message: 'Work order could not be created from incident.',
+        });
+      }
+
+      return result;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async processWorkOrder(
     processWorkOrder: ProcessWorkOrderRequest,
   ): Promise<ProcessWorkOrderResponse | null> {

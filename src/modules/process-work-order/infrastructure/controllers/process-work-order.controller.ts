@@ -32,6 +32,20 @@ export class ProcessWorkOrderController {
     return this.processWorkOrderService.createWorkOrder(createWorkOrder);
   }
 
+  @MessagePattern('work-orders.process-work-order.create-from-incident')
+  async createWorkOrderFromIncident(payload: {
+    incidentCode: string;
+    userIdCreator: string;
+    userIdAssignee: string;
+  }) {
+    const { incidentCode, userIdCreator, userIdAssignee } = payload;
+    return this.processWorkOrderService.createWorkOrderFromIncident(
+      incidentCode,
+      userIdCreator,
+      userIdAssignee,
+    );
+  }
+
   @MessagePattern('work-orders.process-work-order')
   async processWorkOrder(processWorkOrder: ProcessWorkOrderRequest) {
     return this.processWorkOrderService.processWorkOrder(processWorkOrder);

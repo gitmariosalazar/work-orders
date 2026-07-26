@@ -33,6 +33,12 @@ export interface InterfaceProcessWorkOrderRepository {
   createWorkOrder(
     createWorkOrder: CreateWorkOrderCommand,
   ): Promise<ProcessWorkOrderResponse | null>;
+  createWorkOrderFromIncident(
+    incidentCode: string,
+    userIdCreator: string,
+    userIdAssignee: string,
+  ): Promise<ProcessWorkOrderResponse | null>;
+
   processWorkOrder(
     processWorkOrder: ProcessWorkOrderModel,
   ): Promise<ProcessWorkOrderResponse | null>;
