@@ -239,6 +239,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             INSERT INTO work_orders.orden_trabajo (
                 origen,
                 id_entidad_origen,
+                codigo_entidad_origen,
                 id_tipo_trabajo,
                 id_prioridad,
                 id_cliente,
@@ -255,6 +256,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             SELECT 
                 'INCIDENTE',
                 i.incidente_id,
+                i.codigo_incidente,
                 t.id_tipo_trabajo,
                 p.id_prioridad,
                 i.cliente_id,
@@ -274,7 +276,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             FROM incidente_data i
             CROSS JOIN prioridad_data p
             CROSS JOIN tipo_trabajo_data t
-            RETURNING id_orden_trabajo, id_entidad_origen, codigo_orden, clave_catastral, estado, usuario_asignado, created_by, created_at
+            RETURNING id_orden_trabajo, id_entidad_origen, codigo_entidad_origen, codigo_orden, clave_catastral, estado, usuario_asignado, created_by, created_at
         ),
         insert_asignacion AS (
             -- Si $3 no es nulo, inserta oficialmente en la tabla de asignaciones
@@ -321,6 +323,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         SELECT 
             id_orden_trabajo::TEXT AS record_id,
             id_orden_trabajo::TEXT AS work_order_id,
+            codigo_entidad_origen AS codigo_entidad_origen,
             codigo_orden AS order_code,
             clave_catastral AS cadastral_key,
             estado AS current_status,
@@ -339,11 +342,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         current_status_name: string | null;
         created_by_user_id: string;
         processed_at: Date;
-      }>(query, [
-        incidentCode,
-        userIdCreator,
-        userIdAssignee ?? null,
-      ]);
+      }>(query, [incidentCode, userIdCreator, userIdAssignee ?? null]);
 
       if (rows.length === 0) {
         throw new RpcException({
@@ -1666,6 +1665,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             ceo.nombre                                                      AS estado_label,
             ot.origen,
             coo.nombre                                                      AS origen_label,
+            ot.codigo_entidad_origen                                        AS codigo_entidad_origen,
             ot.id_entidad_origen,
 
             -- ── Clasificación ─────────────────────────────────────────────────────────

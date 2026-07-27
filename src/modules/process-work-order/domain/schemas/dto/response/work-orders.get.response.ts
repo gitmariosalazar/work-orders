@@ -67,6 +67,7 @@ export interface OrdenTrabajoDetalle {
   estadoLabel: string;
   origen: string;
   origenLabel: string;
+  codigoEntidadOrigen: string | null; // Código de la entidad origen (ej: "SOLICITUD-12345")
   idEntidadOrigen: string | null; // UUID o ID del trámite origen
 
   // ── Clasificación ──

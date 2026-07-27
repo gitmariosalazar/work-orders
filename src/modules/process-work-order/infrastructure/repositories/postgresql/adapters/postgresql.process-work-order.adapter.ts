@@ -45,6 +45,7 @@ export class ProcessWorkOrderAdapter {
       version: sqlResult.version,
       estado: sqlResult.estado,
       estadoLabel: sqlResult.estado_label,
+      codigoEntidadOrigen: sqlResult.codigo_entidad_origen,
       origen: sqlResult.origen,
       origenLabel: sqlResult.origen_label,
       idEntidadOrigen: sqlResult.id_entidad_origen,

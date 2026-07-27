@@ -70,6 +70,7 @@ export interface OrdenTrabajoDetalleSqlResult {
   estado_label: string;
   origen: string;
   origen_label: string;
+  codigo_entidad_origen: string | null; // Código de la entidad origen (ej: "SOLICITUD-12345")
   id_entidad_origen: string | null;
 
   // ── Clasificación ──
