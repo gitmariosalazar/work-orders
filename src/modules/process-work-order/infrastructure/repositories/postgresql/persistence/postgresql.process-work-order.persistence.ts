@@ -1654,7 +1654,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
   async getOrdenTrabajoDetalleByNumeroOrden(
     numeroOrden: string,
   ): Promise<OrdenTrabajoDetalle | null> {
-    const query: string = `
+    const query: string = /*sql*/ `
         SELECT
             -- ── Identificación ────────────────────────────────────────────────────────
             ot.id_orden_trabajo,
@@ -1679,6 +1679,66 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             ot.direccion,
             ot.ubicacion_detalles,
             ot.clave_catastral,
+            CASE
+                WHEN ot.clave_catastral IS NOT NULL THEN
+                    jsonb_build_object(
+                        'connection_id',       a.acometida_id,
+                        'rate_id',            t.tarifa_id,
+                        'rate_name',          t.descripcion,
+                        'category_id',        cat.categoria_id,
+                        'category_name',      cat.nombre,
+                        'address',            a.direccion,
+                        'meter_number',       a.numero_medidor,
+                        'sector',             a.sector,
+                        'account',            a.cuenta,
+                        'location', CASE
+                                                  WHEN a.coordenadas IS NOT NULL THEN
+                                                    jsonb_build_object(
+                                                        'lat', public.ST_Y(a.coordenadas),
+                                                        'lng', public.ST_X(a.coordenadas)
+                                                    )
+                                                  ELSE NULL
+                                                END
+                    )
+                ELSE NULL
+            END AS "acometida",
+            CASE
+                WHEN e.ruc IS NOT NULL THEN
+                    jsonb_build_object(
+                        'company_id', e.empresa_id,
+                        'commercial_name', e.nombre_comercial,
+                        'business_name', e.razon_social,
+                        'ruc', e.ruc,
+                        'address', e.direccion,
+                        'parish_id', e.parroquia_id,
+                        'country', e.pais,
+                        'client_id', e.cliente_id,
+                        'phones', ccc.phones,
+                        'emails', ccc.correos
+                    )
+                ELSE NULL
+            END AS "company",
+
+            -- Person Data (if applicable)
+            CASE
+                WHEN ci.ciudadano_id IS NOT NULL THEN
+                    jsonb_build_object(
+                        'person_id', ci.ciudadano_id,
+                        'first_name', ci.nombres,
+                        'last_name', ci.apellidos,
+                        'birth_date', ci.fecha_nacimiento,
+                        'is_deceased', ci.fallecido,
+                        'gender_id', ci.sexo_id,
+                        'civil_status_id', ci.estado_civil_id,
+                        'profession_id', ci.profesion_id,
+                        'parish_id', ci.parroquia_id,
+                        'address', ci.direccion,
+                        'country', ci.pais_origen,
+                        'phones', ccc.phones,
+                        'emails', ccc.correos
+                    )
+                ELSE NULL
+            END AS "person",
             public.ST_AsText(ot.geom_punto)                                AS coordenadas_punto,
             public.ST_AsText(ot.geom_trazado)                              AS coordenadas_trazado,
             public.ST_AsText(ot.geom_area)                                 AS coordenadas_area,
@@ -1912,6 +1972,15 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         LEFT JOIN work_orders.orden_trabajo             ot_padre
               ON ot_padre.id_orden_trabajo = ot.id_orden_padre
 
+        -- Person
+        INNER JOIN cliente c           ON c.cliente_id = ot.id_cliente
+        LEFT JOIN ciudadano ci         ON ci.ciudadano_id = c.cliente_id
+        LEFT JOIN empresa e            ON e.ruc = c.cliente_id
+        LEFT JOIN cliente_contacto ccc  ON ccc.cliente_id = c.cliente_id
+        LEFT JOIN public.acometida a on OT.clave_catastral = a.acometida_id
+        LEFT JOIN public.tarifa   t  ON t.tarifa_id         = a.tarifa_id
+        LEFT JOIN public.categoria cat ON cat.categoria_id      = t.categoria_id
+
         WHERE (
           ot.codigo_orden        = $1
         )
@@ -1935,7 +2004,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             es.id_encuesta,      es.calificacion,     es.comentarios,
             cs.id_corte,         cs.tipo_corte,       cs.sector_afectado,
             cs.fecha_inicio,     cs.fecha_fin_estimada, cs.fecha_restablecido, cs.notificacion_enviada,
-            ot_padre.codigo_orden;
+            ot_padre.codigo_orden, person, company, acometida;
       `;
     const result =
       await this.databaseService.query<OrdenTrabajoDetalleSqlResult>(query, [

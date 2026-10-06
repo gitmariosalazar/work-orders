@@ -57,6 +57,50 @@ export class ProcessWorkOrderAdapter {
       direccion: sqlResult.direccion,
       ubicacionDetalles: sqlResult.ubicacion_detalles,
       claveCatastral: sqlResult.clave_catastral,
+      acometida: sqlResult.acometida,
+      company: sqlResult.company
+        ? {
+            ruc: sqlResult.company.ruc,
+            address: sqlResult.company.address,
+            country: sqlResult.company.country,
+            clientId: sqlResult.company.client_id,
+            parishId: sqlResult.company.parish_id,
+            companyId: sqlResult.company.company_id,
+            businessName: sqlResult.company.business_name,
+            commercialName: sqlResult.company.commercial_name,
+            phones: (sqlResult.company.phones ?? []).map((phone) => ({
+              telefonoId: phone.telefono_id,
+              numero: phone.numero,
+            })),
+            emails: (sqlResult.company.emails ?? []).map((email) => ({
+              correoElectronicoId: email.correo_electronico_id,
+              correo: email.correo,
+            })),
+          }
+        : null,
+      person: sqlResult.person
+        ? {
+            address: sqlResult.person.address,
+            country: sqlResult.person.country,
+            genderId: sqlResult.person.gender_id,
+            lastName: sqlResult.person.last_name,
+            parishId: sqlResult.person.parish_id,
+            personId: sqlResult.person.person_id,
+            birthDate: sqlResult.person.birth_date,
+            firstName: sqlResult.person.first_name,
+            isDeceased: sqlResult.person.is_deceased,
+            professionId: sqlResult.person.profession_id,
+            civilStatusId: sqlResult.person.civil_status_id,
+            phones: (sqlResult.person.phones ?? []).map((phone) => ({
+              telefonoId: phone.telefono_id,
+              numero: phone.numero,
+            })),
+            emails: (sqlResult.person.emails ?? []).map((email) => ({
+              correoElectronicoId: email.correo_electronico_id,
+              correo: email.correo,
+            })),
+          }
+        : null,
       coordenadasPunto: sqlResult.coordenadas_punto,
       coordenadasTrazado: sqlResult.coordenadas_trazado,
       coordenadasArea: sqlResult.coordenadas_area,

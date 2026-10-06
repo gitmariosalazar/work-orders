@@ -60,6 +60,61 @@ export interface FotoEvidenciaClienteSqlResult {
   fecha_carga: string; // ISO Timestamp
 }
 
+export interface AcometidaSqlResult {
+  connection_id: string; // UUID
+  rate_id: string | null;
+  rate_name: string | null;
+  category_id: string | null;
+  category_name: string | null;
+  address: string | null;
+  meter_number: string | null;
+  sector: number | null;
+  account: number | null;
+  location: {
+    lat: number | null;
+    lng: number | null;
+  } | null;
+}
+
+export interface ClientSqlResponse {
+  address: string;
+  country: string;
+  gender_id: number;
+  last_name: string;
+  parish_id: string;
+  person_id: string;
+  birth_date: string;
+  first_name: string;
+  is_deceased: boolean | null | number;
+  profession_id: number;
+  civil_status_id: number;
+  phones: PhoneSqlResponse[];
+  emails: EmailSqlResponse[];
+}
+
+export interface CompanySqlResponse {
+  ruc: string;
+  address: string;
+  country: string;
+  client_id: string;
+  parish_id: string;
+  company_id: number;
+  business_name: string;
+  commercial_name: string;
+  phones: PhoneSqlResponse[];
+  emails: EmailSqlResponse[];
+}
+
+export interface PhoneSqlResponse {
+  telefono_id: number;
+  numero: string;
+}
+
+export interface EmailSqlResponse {
+  correo_electronico_id: number;
+  correo: string;
+}
+
 export interface OrdenTrabajoDetalleSqlResult {
   // ── Identificación ──
   id_orden_trabajo: string; // UUID
@@ -84,6 +139,9 @@ export interface OrdenTrabajoDetalleSqlResult {
   direccion: string | null;
   ubicacion_detalles: string | null;
   clave_catastral: string | null;
+  acometida: AcometidaSqlResult | null;
+  company: CompanySqlResponse | null;
+  person: ClientSqlResponse | null;
   coordenadas_punto: string | null; // WKT ej: "POINT(-78.12 0.34)"
   coordenadas_trazado: string | null; // WKT ej: "LINESTRING(...)"
   coordenadas_area: string | null; // WKT ej: "POLYGON(...)"
