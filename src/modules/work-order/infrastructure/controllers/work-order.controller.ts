@@ -34,26 +34,34 @@ export class WorkOrderController {
 
   @MessagePattern('work-orders.get-all-work-orders')
   async getAllWorkOrders(
-    @Payload() data: { limit?: number; offset?: number },
+    @Payload() data: { searchValue?: string; limit?: number; offset?: number },
   ) {
-    const { limit, offset } = data;
-    return this.workOrderService.getAllWorkOrders(limit, offset);
+    const { searchValue, limit, offset } = data;
+    return this.workOrderService.getAllWorkOrders(searchValue, limit, offset);
   }
 
   @MessagePattern('work-orders.get-all-work-orders-full-details')
   async getAllWorkOrdersFullDetails(
-    @Payload() data: { limit?: number; offset?: number },
+    @Payload() data: { searchValue?: string; limit?: number; offset?: number },
   ) {
-    const { limit, offset } = data;
-    return this.workOrderService.getAllWorkOrdersFullDetails(limit, offset);
+    const { searchValue, limit, offset } = data;
+    return this.workOrderService.getAllWorkOrdersFullDetails(
+      searchValue,
+      limit,
+      offset,
+    );
   }
 
   @MessagePattern('work-orders.get-work-order-statistics')
   async getWorkOrderStatistics(
-    @Payload() data: { limit?: number; offset?: number },
+    @Payload() data: { searchValue?: string; limit?: number; offset?: number },
   ) {
-    const { limit, offset } = data;
-    return this.workOrderService.getWorkOrderStatistics(limit, offset);
+    const { searchValue, limit, offset } = data;
+    return this.workOrderService.getWorkOrderStatistics(
+      searchValue,
+      limit,
+      offset,
+    );
   }
 
   @MessagePattern('work-orders.get-work-order-assignments')
@@ -97,9 +105,18 @@ export class WorkOrderController {
   }
 
   @MessagePattern('work-orders.find-work-orders-full-details-by-order-code')
-  async findWorkOrdersFullDetailsByOrderCode(orderCode: string) {
-    return this.workOrderService.findWorkOrdersFullDetailsByOrderCode(
-      orderCode,
+  async findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
+    @Payload()
+    data: {
+      orderCode?: string;
+      cardId?: string;
+      cadastralKey?: string;
+    },
+  ) {
+    return this.workOrderService.findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
+      data?.orderCode,
+      data?.cardId,
+      data?.cadastralKey,
     );
   }
 

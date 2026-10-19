@@ -6,6 +6,11 @@ export interface InterfaceWorkOrderAttachmentsRepository {
     attachment: WorkOrderAttachmentModel,
   ): Promise<WorkOrderAttachmentsResponse | null>;
 
+  addWorkOrderAttachments(
+    workOrderId: string,
+    attachments: WorkOrderAttachmentModel[],
+  ): Promise<WorkOrderAttachmentsResponse[]>;
+
   getWorkOrderAttachmentById(
     attachmentId: string,
   ): Promise<WorkOrderAttachmentsResponse | null>;

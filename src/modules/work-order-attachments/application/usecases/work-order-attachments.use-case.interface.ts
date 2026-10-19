@@ -1,4 +1,5 @@
 import { CreateWorkOrderAttachmentsRequest } from '../../domain/schemas/dto/request/create.work-order-attachments.request';
+import { WorkOrderAttachmentFileRequest } from '../../domain/schemas/dto/request/work-order-attachment-file.request';
 import { UpdateWorkOrderAttachmentsRequest } from '../../domain/schemas/dto/request/update.work-order-attachments.request';
 import { WorkOrderAttachmentsResponse } from '../../domain/schemas/dto/response/work-order-attachments.response';
 
@@ -6,6 +7,11 @@ export interface InterfaceWorkOrderAttachmentsUseCase {
   addWorkOrderAttachment(
     attachment: CreateWorkOrderAttachmentsRequest,
   ): Promise<WorkOrderAttachmentsResponse | null>;
+
+  addWorkOrderAttachments(
+    workOrderId: string,
+    files: WorkOrderAttachmentFileRequest[],
+  ): Promise<WorkOrderAttachmentsResponse[]>;
 
   getWorkOrderAttachmentById(
     attachmentId: string,

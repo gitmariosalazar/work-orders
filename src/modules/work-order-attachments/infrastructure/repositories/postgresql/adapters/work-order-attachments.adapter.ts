@@ -11,6 +11,7 @@ export class WorkOrderAttachmentAdapter {
       fileName: sqlResponse.file_name,
       fileType: sqlResponse.file_type,
       fileUrl: sqlResponse.file_url,
+      evidenceStageCode: sqlResponse.evidence_stage_code,
       uploadDate: sqlResponse.upload_date,
     };
   }

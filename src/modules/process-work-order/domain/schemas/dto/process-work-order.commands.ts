@@ -96,6 +96,7 @@ export interface AddWorkOrderAttachmentCommand {
   fileName: string;
   fileType: string;
   fileUrl: string;
+  evidenceStageCode?: string;
   createdByUserId: string;
 }
 

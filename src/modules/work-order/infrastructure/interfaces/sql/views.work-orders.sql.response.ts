@@ -54,6 +54,8 @@ export interface ViewAllWorkOrdersFullDetailsSqlResponse {
   cadastral_key: string;
   work_order_description: string;
   work_order_location: string;
+  origin: string;
+  origin_code: string;
   coordinates_wkt: string;
   longitude: number;
   latitude: number;
@@ -72,6 +74,7 @@ export interface ViewAllWorkOrdersFullDetailsSqlResponse {
     file_name: string;
     file_type: string;
     file_url: string;
+    evidence_step: string;
     upload_date: string; // ISO date string
   }>;
   materials_used: Array<{

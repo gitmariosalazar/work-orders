@@ -136,6 +136,8 @@ export class WorkOrderAdapter {
       cadastralKey: sqlResponse.cadastral_key,
       workOrderDescription: sqlResponse.work_order_description,
       workOrderLocation: sqlResponse.work_order_location,
+      origin: sqlResponse.origin,
+      originCode: sqlResponse.origin_code,
       coordinatesWkt: sqlResponse.coordinates_wkt,
       longitude: sqlResponse.longitude,
       latitude: sqlResponse.latitude,
@@ -159,6 +161,7 @@ export class WorkOrderAdapter {
           fileName: attachment.file_name,
           fileType: attachment.file_type,
           fileUrl: attachment.file_url,
+          evidenceStep: attachment.evidence_step,
           uploadDate: new Date(attachment.upload_date),
         })) || [],
       materialsUsed:

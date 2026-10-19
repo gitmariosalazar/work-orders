@@ -22,12 +22,18 @@ import { GetWorkOrderPriorityStatisticsResponse } from '../../domain/schemas/dto
 import { GetWorkOrderStatusStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_status_statistics.response';
 import { GetWorkOrderTypeStatisticsResponse } from '../../domain/schemas/dto/response/get_work_order_type_statistics.response';
 import { WorkOrdersStatisticsKeyResponse } from '../../domain/schemas/dto/response/work_orders_statistics_key.response';
+import {
+  InterfaceWorkOrderAttachmentsPort,
+  WORK_ORDER_ATTACHMENTS_PORT,
+} from '../ports/work-order-attachments.port';
 
 @Injectable()
 export class WorkOrderService implements InterfaceWorkOrderUseCase {
   constructor(
     @Inject('WorkOrderRepository')
     private readonly workOrderRepository: InterfaceWorkOrderRepository,
+    @Inject(WORK_ORDER_ATTACHMENTS_PORT)
+    private readonly workOrderAttachments: InterfaceWorkOrderAttachmentsPort,
   ) {}
 
   async createWorkOrder(
@@ -65,6 +71,13 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
           statusCode: statusCode.INTERNAL_SERVER_ERROR,
           message: 'Failed to create work order',
         });
+      }
+
+      if (workOrder.images?.length) {
+        await this.workOrderAttachments.attachImages(
+          createWorkOrder.workOrderId,
+          workOrder.images,
+        );
       }
 
       return createWorkOrder;
@@ -178,9 +191,17 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
     }
   }
 
-  async getAllWorkOrders(limit?: number, offset?: number): Promise<WorkOrderResponse[]> {
+  async getAllWorkOrders(
+    searchValue?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<WorkOrderResponse[]> {
     try {
-      const workOrders = await this.workOrderRepository.getAllWorkOrders(limit, offset);
+      const workOrders = await this.workOrderRepository.getAllWorkOrders(
+        searchValue,
+        limit,
+        offset,
+      );
 
       if (workOrders.length === 0) {
         throw new RpcException({
@@ -196,11 +217,13 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
   }
 
   async getWorkOrderStatistics(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewWorkOrderStatisticsResponse[]> {
     try {
       const statistics = await this.workOrderRepository.getWorkOrderStatistics(
+        searchValue,
         limit,
         offset,
       );
@@ -326,12 +349,14 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
   }
 
   async getAllWorkOrdersFullDetails(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse[]> {
     try {
       const fullDetails =
         await this.workOrderRepository.getAllWorkOrdersFullDetails(
+          searchValue,
           limit,
           offset,
         );
@@ -349,26 +374,34 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
     }
   }
 
-  async findWorkOrdersFullDetailsByOrderCode(
-    orderCode: string,
+  async findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
+    orderCode?: string,
+    cardId?: string,
+    cadastralKey?: string,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse | null> {
     try {
-      if (!orderCode || orderCode.trim() === '') {
+      if (
+        (!orderCode || orderCode.trim() === '') &&
+        (!cardId || cardId.trim() === '') &&
+        (!cadastralKey || cadastralKey.trim() === '')
+      ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
-          message: 'Invalid work order code',
+          message: 'Invalid search parameters',
         });
       }
 
       const fullDetails =
-        await this.workOrderRepository.findWorkOrdersFullDetailsByOrderCode(
+        await this.workOrderRepository.findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
           orderCode,
+          cardId,
+          cadastralKey,
         );
 
       if (!fullDetails) {
         throw new RpcException({
           statusCode: statusCode.NOT_FOUND,
-          message: `No work order full details found for order code ${orderCode}`,
+          message: `No work order full details found for the provided search parameters`,
         });
       }
 

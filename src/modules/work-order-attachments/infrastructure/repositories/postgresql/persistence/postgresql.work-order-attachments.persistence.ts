@@ -18,6 +18,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
     nombre_archivo AS file_name,
     tipo_adjunto AS file_type,
     url_archivo AS file_url,
+    codigo_etapa_evidencia AS evidence_stage_code,
     created_at AS upload_date
   `;
 
@@ -111,14 +112,15 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
     try {
       const query: string = `
       INSERT INTO work_orders.adjuntos_orden_trabajo
-          (id_orden_trabajo, nombre_archivo, tipo_adjunto, url_archivo, mime_type, created_by)
+          (id_orden_trabajo, nombre_archivo, tipo_adjunto, url_archivo, mime_type, created_by, codigo_etapa_evidencia)
       SELECT
           $1,
           $2,
           $3,
           $4,
           $5,
-          ot.created_by
+          ot.created_by,
+          $6
       FROM work_orders.orden_trabajo ot
       WHERE ot.id_orden_trabajo = $1
         AND ot.is_deleted = FALSE
@@ -132,6 +134,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
         attachment.getFileType(),
         attachment.getFileUrl(),
         null,
+        attachment.getEvidenceStageCode(),
       ];
       const result =
         await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
@@ -154,6 +157,60 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
     }
   }
 
+  async addWorkOrderAttachments(
+    workOrderId: string,
+    attachments: WorkOrderAttachmentModel[],
+  ): Promise<WorkOrderAttachmentsResponse[]> {
+    try {
+      // Una sola sentencia INSERT: se guardan todos los adjuntos o ninguno.
+      const query: string = `
+      INSERT INTO work_orders.adjuntos_orden_trabajo
+          (id_orden_trabajo, nombre_archivo, tipo_adjunto, url_archivo, mime_type, created_by, codigo_etapa_evidencia)
+      SELECT
+          ot.id_orden_trabajo,
+          a.file_name,
+          a.file_type,
+          a.file_url,
+          NULL,
+          ot.created_by,
+          a.evidence_stage_code
+      FROM work_orders.orden_trabajo ot
+      CROSS JOIN UNNEST($2::text[], $3::text[], $4::text[], $5::text[])
+          AS a(file_name, file_type, file_url, evidence_stage_code)
+      WHERE ot.id_orden_trabajo = $1
+        AND ot.is_deleted = FALSE
+      RETURNING
+          ${this.returnFields};
+      `;
+
+      const params = [
+        workOrderId,
+        attachments.map((a) => a.getFileName()),
+        attachments.map((a) => a.getFileType()),
+        attachments.map((a) => a.getFileUrl()),
+        attachments.map((a) => a.getEvidenceStageCode()),
+      ];
+      const result =
+        await this.databaseService.query<WorkOrderAttachmentsSqlResponse>(
+          query,
+          params,
+        );
+
+      if (result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.BAD_REQUEST,
+          message: `Work order with ID ${workOrderId} does not exist.`,
+        });
+      }
+
+      return WorkOrderAttachmentAdapter.fromWorkOrderAttachmentsSqlResponsesToWorkOrderAttachmentsResponsesList(
+        result,
+      );
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async updateWorkOrderAttachment(
     attachmentId: string,
     attachment: WorkOrderAttachmentModel,
@@ -165,6 +222,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
           nombre_archivo = COALESCE($2, nombre_archivo),
           tipo_adjunto = COALESCE($3, tipo_adjunto),
           url_archivo = COALESCE($4, url_archivo),
+          codigo_etapa_evidencia = COALESCE($5, codigo_etapa_evidencia),
           updated_at = NOW()
       WHERE id_adjunto = $6
         AND is_deleted = FALSE
@@ -177,7 +235,7 @@ export class PostgresqlWorkOrderAttachmentsPersistence implements InterfaceWorkO
         attachment.getFileName(),
         attachment.getFileType(),
         attachment.getFileUrl(),
-        attachment.getUploadDate(),
+        attachment.getEvidenceStageCode(),
         attachmentId,
       ];
       const result =

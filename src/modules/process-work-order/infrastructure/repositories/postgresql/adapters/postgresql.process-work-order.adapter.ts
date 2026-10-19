@@ -157,6 +157,7 @@ export class ProcessWorkOrderAdapter {
         url: attachment.url,
         tipoAdjunto: attachment.tipo_adjunto,
         mimeType: attachment.mime_type,
+        evidenceStep: attachment.evidence_step,
         fechaCarga: attachment.fecha_carga,
       })),
       observaciones: (sqlResult.observaciones ?? []).map((observation) => ({

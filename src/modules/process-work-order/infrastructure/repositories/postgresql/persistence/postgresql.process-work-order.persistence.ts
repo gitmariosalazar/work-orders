@@ -816,9 +816,10 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             nombre_archivo,
             tipo_adjunto,
             url_archivo,
-            created_by
+            created_by,
+            codigo_etapa_evidencia
           )
-          VALUES ($1::uuid, $2, $3, $4, $5::uuid)
+          VALUES ($1::uuid, $2, $3, $4, $5::uuid, $6)
           RETURNING
             id_adjunto::TEXT AS record_id,
             id_orden_trabajo::TEXT AS work_order_id,
@@ -830,6 +831,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           addWorkOrderAttachment.fileType,
           addWorkOrderAttachment.fileUrl,
           addWorkOrderAttachment.createdByUserId,
+          addWorkOrderAttachment.evidenceStageCode ?? null,
         ],
       );
 
@@ -981,11 +983,16 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           UPDATE work_orders.orden_trabajo
           SET fecha_completada = NOW(),
               usuario_completacion = $2::uuid,
+              descripcion_finalizacion = $3,
               updated_at = NOW()
           WHERE id_orden_trabajo = $1::uuid
             AND is_deleted = FALSE;
         `,
-        [completeWorkOrder.workOrderId, completeWorkOrder.userId],
+        [
+          completeWorkOrder.workOrderId,
+          completeWorkOrder.userId,
+          completeWorkOrder.finalizationDescription?.trim(),
+        ],
       );
 
       return this.transitionWorkOrderWithClient(
@@ -1078,6 +1085,21 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       `,
       [workOrderId, newStatus, userId, comment],
     );
+
+    // Cualquier camino hacia COMPLETADA registra quién y cuándo completó
+    if (newStatus.endsWith('COMPLETADA')) {
+      await client.query(
+        `
+          UPDATE work_orders.orden_trabajo
+          SET fecha_completada = COALESCE(fecha_completada, NOW()),
+              usuario_completacion = COALESCE(usuario_completacion, $2::uuid),
+              updated_at = NOW()
+          WHERE id_orden_trabajo = $1::uuid
+            AND is_deleted = FALSE;
+        `,
+        [workOrderId, userId],
+      );
+    }
 
     // 2. Si la OT viene de acometidas, avanzar la solicitud en la misma transacción
     await this.advanceSolicitudFromOT(client, workOrderId, newStatus, userId);
@@ -1836,6 +1858,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
                     'nombre_archivo',   aot.nombre_archivo,
                     'url',              aot.url_archivo,
                     'tipo_adjunto',     aot.tipo_adjunto,
+                    'evidence_step',     aot.codigo_etapa_evidencia,
                     'mime_type',        aot.mime_type,
                     'fecha_carga',      aot.created_at
                 )) FILTER (WHERE aot.id_adjunto IS NOT NULL),

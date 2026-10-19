@@ -11,10 +11,14 @@ import { DatabasePersistenceModule } from '../../../../../shared/connections/dat
   providers: [
     WorkOrderAttachmentsService,
     {
+      provide: 'WorkOrderAttachmentsUseCase',
+      useExisting: WorkOrderAttachmentsService,
+    },
+    {
       provide: 'WorkOrderAttachmentsRepository',
       useClass: PostgresqlWorkOrderAttachmentsPersistence,
     },
   ],
-  exports: [],
+  exports: ['WorkOrderAttachmentsUseCase'],
 })
 export class PostgreSqlWorkOrderAttachmentsModule {}

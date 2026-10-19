@@ -4,5 +4,6 @@ export interface WorkOrderAttachmentsSqlResponse {
   file_name: string;
   file_type: string;
   file_url: string;
+  evidence_stage_code: string;
   upload_date: Date;
 }

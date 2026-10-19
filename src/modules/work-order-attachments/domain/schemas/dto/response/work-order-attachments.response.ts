@@ -4,5 +4,6 @@ export interface WorkOrderAttachmentsResponse {
   fileName: string;
   fileType: string;
   fileUrl: string;
+  evidenceStageCode: string;
   uploadDate: Date;
 }

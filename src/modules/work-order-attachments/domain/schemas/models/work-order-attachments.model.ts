@@ -4,6 +4,7 @@ export class WorkOrderAttachmentModel {
   fileName: string;
   fileType: string;
   fileUrl: string;
+  evidenceStageCode: string;
   uploadDate: Date;
 
   constructor(
@@ -12,6 +13,7 @@ export class WorkOrderAttachmentModel {
     fileName: string,
     fileType: string,
     fileUrl: string,
+    evidenceStageCode: string,
     uploadDate: Date,
   ) {
     this.attachmentId = attachmentId;
@@ -19,6 +21,7 @@ export class WorkOrderAttachmentModel {
     this.fileName = fileName;
     this.fileType = fileType;
     this.fileUrl = fileUrl;
+    this.evidenceStageCode = evidenceStageCode;
     this.uploadDate = uploadDate;
   }
 
@@ -42,12 +45,20 @@ export class WorkOrderAttachmentModel {
     return this.fileUrl;
   }
 
+  getEvidenceStageCode(): string {
+    return this.evidenceStageCode;
+  }
+
   getUploadDate(): Date {
     return this.uploadDate;
   }
 
   setFileUrl(fileUrl: string): void {
     this.fileUrl = fileUrl;
+  }
+
+  setEvidenceStageCode(evidenceStageCode: string): void {
+    this.evidenceStageCode = evidenceStageCode;
   }
 
   setUploadDate(uploadDate: Date): void {
@@ -77,6 +88,7 @@ export class WorkOrderAttachmentModel {
       fileName: this.fileName,
       fileType: this.fileType,
       fileUrl: this.fileUrl,
+      evidenceStageCode: this.evidenceStageCode,
       uploadDate: this.uploadDate,
     };
   }

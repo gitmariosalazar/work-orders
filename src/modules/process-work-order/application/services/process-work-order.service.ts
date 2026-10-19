@@ -520,7 +520,16 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
     completeWorkOrder: ProcessWorkOrderRequest,
   ): Promise<ProcessWorkOrderResponse | null> {
     try {
-      const result = await this.transitionWorkOrder(completeWorkOrder);
+      this.validateTransitionRequest(completeWorkOrder);
+      this.validateString(
+        completeWorkOrder.finalizationDescription,
+        'Finalization description',
+      );
+
+      const result =
+        await this.processWorkOrderRepository.completeWorkOrder(
+          completeWorkOrder,
+        );
       if (!result) {
         throw new RpcException({
           statusCode: statusCode.INTERNAL_SERVER_ERROR,

@@ -24,6 +24,7 @@ export interface AdjuntoEvidenciaSqlResult {
   url: string;
   tipo_adjunto: string;
   mime_type: string;
+  evidence_step: string;
   fecha_carga: string; // ISO Timestamp
 }
 

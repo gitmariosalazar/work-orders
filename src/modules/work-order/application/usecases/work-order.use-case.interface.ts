@@ -25,10 +25,15 @@ export interface InterfaceWorkOrderUseCase {
   ): Promise<WorkOrderResponse | null>;
   getWorkOrderById(orderCode: string): Promise<WorkOrderResponse | null>;
   getWorkOrdersByClientId(clientId: string): Promise<WorkOrderResponse[]>;
-  getAllWorkOrders(limit?: number, offset?:number): Promise<WorkOrderResponse[]>;
+  getAllWorkOrders(
+    searchValue?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<WorkOrderResponse[]>;
 
   // Views
   getWorkOrderStatistics(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewWorkOrderStatisticsResponse[]>;
@@ -53,12 +58,15 @@ export interface InterfaceWorkOrderUseCase {
     offset?: number,
   ): Promise<ViewWorkOrdersByClientResponse[]>;
   getAllWorkOrdersFullDetails(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse[]>;
 
-  findWorkOrdersFullDetailsByOrderCode(
-    orderCode: string,
+  findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
+    orderCode?: string,
+    cardId?: string,
+    cadastralKey?: string,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse | null>;
 
   getWorkOrderPriorityStatistics(): Promise<

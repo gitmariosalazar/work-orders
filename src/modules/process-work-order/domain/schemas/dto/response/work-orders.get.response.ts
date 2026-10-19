@@ -22,6 +22,7 @@ export interface AdjuntoEvidencia {
   nombreArchivo: string;
   url: string;
   tipoAdjunto: string;
+  evidenceStep: string;
   mimeType: string;
   fechaCarga: string; // ISO Timestamp
 }

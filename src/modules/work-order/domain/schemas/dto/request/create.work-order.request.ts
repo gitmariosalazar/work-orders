@@ -17,6 +17,7 @@ export class CreateWorkOrderRequest {
   coordinates?: string;
   metadata?: string;
   cadastralKey?: string;
+  images?: string[];
   constructor(
     orderCode: string,
     workTypeId: number,
@@ -34,6 +35,7 @@ export class CreateWorkOrderRequest {
     coordinates?: string,
     metadata?: string,
     cadastralKey?: string,
+    images?: string[],
   ) {
     this.orderCode = orderCode;
     this.workTypeId = workTypeId;
@@ -70,6 +72,9 @@ export class CreateWorkOrderRequest {
     }
     if (cadastralKey !== undefined) {
       this.cadastralKey = cadastralKey;
+    }
+    if (images !== undefined && images?.length > 0) {
+      this.images = images;
     }
   }
 }

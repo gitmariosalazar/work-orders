@@ -7,6 +7,7 @@ import { RpcException } from '@nestjs/microservices';
 import { WorkOrderAttachmentModel } from '../../domain/schemas/models/work-order-attachments.model';
 import { WorkOrderAttachmentMapper } from '../mappers/work-order-attachments.mapper';
 import { UpdateWorkOrderAttachmentsRequest } from '../../domain/schemas/dto/request/update.work-order-attachments.request';
+import { WorkOrderAttachmentFileRequest } from '../../domain/schemas/dto/request/work-order-attachment-file.request';
 import { statusCode } from '../../../../settings/environments/status-code';
 import { validateFields } from '../../../../shared/validators/fields.validators';
 
@@ -60,6 +61,45 @@ export class WorkOrderAttachmentsService implements InterfaceWorkOrderAttachment
     }
   }
 
+  async addWorkOrderAttachments(
+    workOrderId: string,
+    files: WorkOrderAttachmentFileRequest[],
+  ): Promise<WorkOrderAttachmentsResponse[]> {
+    if (!workOrderId || workOrderId.trim() === '') {
+      throw new RpcException({
+        statusCode: statusCode.BAD_REQUEST,
+        message: 'Invalid work order ID',
+      });
+    }
+
+    if (!Array.isArray(files) || files.length === 0) {
+      return [];
+    }
+
+    const requiredFields: string[] = ['fileName', 'fileType', 'fileUrl'];
+    const errors: string[] = files.flatMap((file, index) =>
+      validateFields(file, requiredFields).map(
+        (message) => `attachments[${index}]: ${message}`,
+      ),
+    );
+
+    if (errors.length > 0) {
+      throw new RpcException({
+        statusCode: statusCode.BAD_REQUEST,
+        message: errors,
+      });
+    }
+
+    const models: WorkOrderAttachmentModel[] = files.map((file) =>
+      WorkOrderAttachmentMapper.fromFileRequestToModel(workOrderId, file),
+    );
+
+    return this.workOrderAttachmentsUseCase.addWorkOrderAttachments(
+      workOrderId,
+      models,
+    );
+  }
+
   async updateWorkOrderAttachment(
     attachmentId: string,
     attachment: UpdateWorkOrderAttachmentsRequest,
@@ -90,6 +130,7 @@ export class WorkOrderAttachmentsService implements InterfaceWorkOrderAttachment
         existingAttachment.fileName,
         existingAttachment.fileType,
         existingAttachment.fileUrl,
+        existingAttachment.evidenceStageCode,
         existingAttachment.uploadDate,
       );
 

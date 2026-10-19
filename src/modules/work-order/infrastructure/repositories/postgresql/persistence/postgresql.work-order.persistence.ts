@@ -309,11 +309,13 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
   }
 
   async getAllWorkOrders(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<WorkOrderResponse[]> {
     try {
-      const paramsQuery: any[] = [toNull(limit), toNull(offset)];
+      const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
+      const paramsQuery: any[] = [term, toNull(limit), toNull(offset)];
 
       const query = `
         SELECT 
@@ -337,8 +339,12 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
           is_deleted
         FROM work_orders.orden_trabajo
         WHERE is_deleted = FALSE
+          AND ($1::text IS NULL
+            OR clave_catastral ILIKE $1::text
+            OR id_cliente::TEXT ILIKE $1::text
+            OR codigo_orden ILIKE $1::text)
         ORDER BY fecha_creacion DESC
-        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
+        LIMIT COALESCE($2::int, 100) OFFSET COALESCE($3::int, 0);
       `;
 
       const result = await this.databaseService.query<WorkOrderSQLResponse>(
@@ -355,15 +361,21 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
   }
 
   async getWorkOrderStatistics(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewWorkOrderStatisticsResponse[]> {
     try {
+      const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
       const query = `
-        SELECT * FROM work_orders.view_work_order_statistics
-        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
+        SELECT * FROM work_orders.view_work_order_key_statistics
+        WHERE ($1::text IS NULL
+          OR status_name ILIKE $1::text
+          OR department_name::TEXT ILIKE $1::text
+          OR work_type ILIKE $1::text)
+        LIMIT COALESCE($2::int, 100) OFFSET COALESCE($3::int, 0);
       `;
-      const values = [toNull(limit), toNull(offset)];
+      const values = [term, toNull(limit), toNull(offset)];
 
       const result =
         await this.databaseService.query<ViewWorkOrderStatisticsSqlResponse>(
@@ -559,15 +571,23 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
   }
 
   async getAllWorkOrdersFullDetails(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse[]> {
     try {
+      const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
+
       const query = `
         SELECT * FROM work_orders.view_all_work_orders_full_details
-        LIMIT COALESCE($1::int, 100) OFFSET COALESCE($2::int, 0);
+        WHERE ($1::text IS NULL
+          OR cadastral_key ILIKE $1
+          OR cliente_id::TEXT ILIKE $1
+          OR work_order_code ILIKE $1)
+        ORDER BY creation_date DESC NULLS LAST, work_order_code DESC
+        LIMIT COALESCE($2::int, 100) OFFSET COALESCE($3::int, 0);
       `;
-      const values = [toNull(limit), toNull(offset)];
+      const values = [term, toNull(limit), toNull(offset)];
 
       const result =
         await this.databaseService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
@@ -592,35 +612,44 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     }
   }
 
-  async findWorkOrdersFullDetailsByOrderCode(
-    orderCode: string,
+  async findWorkOrdersFullDetailsByOrderCodeOrCardIdOrCadastralKey(
+    orderCode?: string,
+    cardId?: string,
+    cadastralKey?: string,
   ): Promise<ViewAllWorkOrdersFullDetailsResponse | null> {
-    try {
-      const query: string = `
-        SELECT * FROM work_orders.view_all_work_orders_full_details
-        WHERE work_order_code = $1;
-      `;
-      const values = [orderCode];
+    const clean = (value?: string): string | null => {
+      const trimmed = value?.trim();
+      return trimmed ? trimmed : null;
+    };
 
-      const result =
-        await this.databaseService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
-          query,
-          values,
-        );
+    const values = [clean(orderCode), clean(cardId), clean(cadastralKey)];
 
-      if (result.length === 0) {
-        throw new RpcException({
-          statusCode: statusCode.NOT_FOUND,
-          message: 'No work orders full details found for the given order code',
-        });
-      }
+    const query: string = `
+      SELECT * FROM work_orders.view_all_work_orders_full_details
+      WHERE ($1::text IS NULL OR work_order_code = $1::text)
+        AND ($2::text IS NULL OR cliente_id::TEXT = $2::text)
+        AND ($3::text IS NULL OR cadastral_key = $3::text)
+      ORDER BY creation_date DESC NULLS LAST, work_order_code DESC
+      LIMIT 1;
+    `;
 
-      return WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
-        result[0],
+    const result =
+      await this.databaseService.query<ViewAllWorkOrdersFullDetailsSqlResponse>(
+        query,
+        values,
       );
-    } catch (error) {
-      throw error;
+
+    if (result.length === 0) {
+      throw new RpcException({
+        statusCode: statusCode.NOT_FOUND,
+        message:
+          'No work orders full details found for the given search parameters',
+      });
     }
+
+    return WorkOrderAdapter.fromViewAllWorkOrdersFullDetailsSqlResponseToViewAllWorkOrdersFullDetailsResponse(
+      result[0],
+    );
   }
 
   async getWorkOrderPriorityStatistics(): Promise<
