@@ -178,14 +178,7 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
       const workOrders =
         await this.workOrderRepository.getWorkOrdersByClientId(clientId);
 
-      if (workOrders.length === 0) {
-        throw new RpcException({
-          statusCode: statusCode.NOT_FOUND,
-          message: `No work orders found for client ID ${clientId}`,
-        });
-      }
-
-      return workOrders;
+      return workOrders ?? [];
     } catch (error) {
       throw error;
     }
@@ -203,14 +196,7 @@ export class WorkOrderService implements InterfaceWorkOrderUseCase {
         offset,
       );
 
-      if (workOrders.length === 0) {
-        throw new RpcException({
-          statusCode: statusCode.NOT_FOUND,
-          message: 'No work orders found',
-        });
-      }
-
-      return workOrders;
+      return workOrders ?? [];
     } catch (error) {
       throw error;
     }

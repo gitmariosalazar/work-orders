@@ -774,13 +774,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         await this.processWorkOrderRepository.getOrdenesTrabajoBySolicitudId(
           solicitudId,
         );
-      if (!result || result.length === 0) {
-        throw new RpcException({
-          statusCode: statusCode.NOT_FOUND,
-          message: `No work orders found for solicitudId: ${solicitudId}`,
-        });
-      }
-      return result;
+      return result ?? [];
     } catch (error) {
       throw error;
     }
@@ -835,14 +829,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         offset,
       );
 
-      if (!result || result.length === 0) {
-        throw new RpcException({
-          statusCode: statusCode.NOT_FOUND,
-          message: 'No work orders found.',
-        });
-      }
-
-      return result;
+      return result ?? [];
     } catch (error) {
       throw error;
     }
