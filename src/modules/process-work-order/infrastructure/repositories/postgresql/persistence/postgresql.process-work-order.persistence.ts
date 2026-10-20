@@ -44,6 +44,7 @@ import {
   WorkOrderListItemSqlResult,
 } from '../../../interfaces/sql/work-orders.sql.response';
 import { ProcessWorkOrderAdapter } from '../adapters/postgresql.process-work-order.adapter';
+import { toNull } from '../../../../../../shared/validators/to-null';
 
 type OrderSnapshot = {
   work_order_id: string;
@@ -2046,8 +2047,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
   }
 
   async getOrdenTrabajoTrackingByNumeroOrden(
-    numeroOrden: string,
-  ): Promise<OrdenTrabajoTracking | null> {
+    searchValue: string,
+  ): Promise<OrdenTrabajoTracking[]> {
     try {
       const query: string = `
       SELECT
@@ -2196,6 +2197,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
       WHERE (
           ot.codigo_orden        = $1
+          OR ot.id_cliente = $1
+          OR ot.clave_catastral = $1
       )
         AND ot.is_deleted = FALSE
 
@@ -2203,20 +2206,21 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       `;
       const result =
         await this.databaseService.query<OrdenTrabajoTrackingSqlResult>(query, [
-          numeroOrden,
+          searchValue,
         ]);
 
       if (result.length === 0) {
         throw new RpcException({
           statusCode: statusCode.NOT_FOUND,
-          message: `Work order with number ${numeroOrden} not found.`,
+          message: `Work order with provided search value ${searchValue} not found.`,
         });
       }
 
-      const response =
+      const response = result.map((r) =>
         ProcessWorkOrderAdapter.fromOrdenTrabajoTrackingSqlResultToOrdenTrabajoTracking(
-          result[0],
-        );
+          r,
+        ),
+      );
       return response;
     } catch (error) {
       throw error;
@@ -2401,9 +2405,12 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
   }
 
   async getAllWorkOrders(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<WorkOrderListItem[]> {
+    const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
+
     const query: string = `
       SELECT
         ot.id_orden_trabajo::TEXT                       AS work_order_id,
@@ -2446,13 +2453,21 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       LEFT  JOIN public.ciudadano      ciud ON ciud.ciudadano_id   = c.cliente_id
       LEFT  JOIN public.empresa        emp  ON emp.cliente_id      = c.cliente_id
       WHERE  ot.is_deleted = FALSE
+      AND (
+        $1::text IS NULL
+        OR ot.codigo_orden ILIKE $1::text
+        OR ot.id_cliente::TEXT ILIKE $1::text
+        OR ot.clave_catastral ILIKE $1::text
+      )
       ORDER  BY ot.fecha_creacion DESC
-      LIMIT  COALESCE($1::int, 100)
-      OFFSET COALESCE($2::int, 0);
+      LIMIT  COALESCE($2::int, 100)
+      OFFSET COALESCE($3::int, 0);
       `;
+    const values = [term, toNull(limit), toNull(offset)];
+
     const result = await this.databaseService.query<WorkOrderListItemSqlResult>(
       query,
-      [limit, offset],
+      values,
     );
     const response = result.map((row) =>
       ProcessWorkOrderAdapter.fromWorkOrderListItemSqlResultToWorkOrderListItem(

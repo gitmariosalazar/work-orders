@@ -121,8 +121,8 @@ export interface InterfaceProcessWorkOrderUseCase {
 
   /** Timeline y métricas de SLA de una OT — monitoreo interno */
   getOrdenTrabajoTrackingByNumeroOrden(
-    numeroOrden: string,
-  ): Promise<OrdenTrabajoTracking | null>;
+    searchValue: string,
+  ): Promise<OrdenTrabajoTracking[]>;
 
   /** OTs vinculadas a un trámite — portal del cliente */
   getOrdenesTrabajoBySolicitudId(
@@ -131,6 +131,7 @@ export interface InterfaceProcessWorkOrderUseCase {
 
   /** Listado completo de OTs con paginación — panel administrativo */
   getAllWorkOrders(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<WorkOrderListItem[]>;

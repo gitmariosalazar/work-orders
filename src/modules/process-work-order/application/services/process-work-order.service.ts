@@ -787,19 +787,19 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
   }
 
   async getOrdenTrabajoTrackingByNumeroOrden(
-    numeroOrden: string,
-  ): Promise<OrdenTrabajoTracking | null> {
+    searchValue: string,
+  ): Promise<OrdenTrabajoTracking[]> {
     try {
-      this.validateString(numeroOrden, 'numeroOrden');
+      this.validateString(searchValue, 'searchValue');
 
       const result =
         await this.processWorkOrderRepository.getOrdenTrabajoTrackingByNumeroOrden(
-          numeroOrden,
+          searchValue,
         );
-      if (!result) {
+      if (!result || result.length === 0) {
         throw new RpcException({
           statusCode: statusCode.NOT_FOUND,
-          message: `Tracking information not found for work order number: ${numeroOrden}`,
+          message: `Tracking information not found for work order number: ${searchValue}`,
         });
       }
 
@@ -810,6 +810,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
   }
 
   async getAllWorkOrders(
+    searchValue?: string,
     limit?: number,
     offset?: number,
   ): Promise<WorkOrderListItem[]> {
@@ -829,6 +830,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
       }
 
       const result = await this.processWorkOrderRepository.getAllWorkOrders(
+        searchValue,
         limit,
         offset,
       );

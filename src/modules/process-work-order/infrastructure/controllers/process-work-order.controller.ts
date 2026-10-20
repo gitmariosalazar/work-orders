@@ -220,9 +220,9 @@ export class ProcessWorkOrderController {
   }
 
   @MessagePattern('work-orders.process-work-order.get-tracking-by-numero-orden')
-  async getOrdenTrabajoTrackingByNumeroOrden(payload: { numeroOrden: string }) {
+  async getOrdenTrabajoTrackingByNumeroOrden(payload: { searchValue: string }) {
     return this.processWorkOrderService.getOrdenTrabajoTrackingByNumeroOrden(
-      payload.numeroOrden,
+      payload.searchValue,
     );
   }
 
@@ -234,8 +234,16 @@ export class ProcessWorkOrderController {
   }
 
   @MessagePattern('work-orders.process-work-order.get-all-work-orders')
-  async getAllWorkOrders(payload: { limit?: number; offset?: number }) {
-    const { limit, offset } = payload;
-    return this.processWorkOrderService.getAllWorkOrders(limit, offset);
+  async getAllWorkOrders(payload: {
+    searchValue?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const { searchValue, limit, offset } = payload;
+    return this.processWorkOrderService.getAllWorkOrders(
+      searchValue,
+      limit,
+      offset,
+    );
   }
 }
