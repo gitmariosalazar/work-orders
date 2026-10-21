@@ -228,13 +228,15 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
             LIMIT 1
         ),
         tipo_trabajo_data AS (
-            -- 1. Intentar hacer match exacto del nombre del tipo de incidente con el tipo de trabajo
-            SELECT id_tipo_trabajo FROM work_orders.tipo_trabajo 
-            WHERE UPPER(nombre) = (SELECT UPPER(nombre_tipo_incidente) FROM incidente_data)
-            UNION ALL
-            -- 2. Fallback: Si no existe un nombre idéntico, tomar el ID 1 por defecto
-            SELECT id_tipo_trabajo FROM work_orders.tipo_trabajo WHERE id_tipo_trabajo = 1 
-            LIMIT 1
+            -- Tipo de trabajo configurado para el tipo de incidente; si no hay, 'Inspección General' (12)
+            SELECT COALESCE(
+                (SELECT tim.id_tipo_trabajo_default
+                   FROM public.incidente_medidor im
+                   JOIN public.tipo_incidente_medidor tim ON tim.tipo_incidente_id = im.tipo_incidente_id
+                  WHERE im.codigo_incidente = $1),
+                (SELECT id_tipo_trabajo FROM work_orders.tipo_trabajo WHERE id_tipo_trabajo = 12),
+                1
+            ) AS id_tipo_trabajo
         ),
         insert_ot AS (
             INSERT INTO work_orders.orden_trabajo (
