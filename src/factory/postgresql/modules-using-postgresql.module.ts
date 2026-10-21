@@ -7,6 +7,7 @@ import { PostgreSqlDetailWorkOrderMaterialModule } from '../../modules/products-
 import { PostgreSqlWorkOrderWorkerAssignmentModule } from '../../modules/worker-assignment/infrastructure/modules/postgresql/postgresql.work-order-worker-assignment.module';
 import { PostgreSqlWorkOrderAttachmentsModule } from '../../modules/work-order-attachments/infrastructure/modules/postgresql/postgresql.work-order-attachments.module';
 import { PostgreSqlProcessWorkOrderModule } from '../../modules/process-work-order/infrastructure/modules/postgresql/postgresql.process-work-order.module';
+import { PostgreSqlDashboardModule } from '../../modules/dashboard/infrastructure/modules/postgresql/postgresql.dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PostgreSqlProcessWorkOrderModule } from '../../modules/process-work-ord
     PostgreSqlWorkOrderWorkerAssignmentModule,
     PostgreSqlWorkOrderAttachmentsModule,
     PostgreSqlProcessWorkOrderModule,
+    PostgreSqlDashboardModule,
   ],
   controllers: [],
   providers: [],
