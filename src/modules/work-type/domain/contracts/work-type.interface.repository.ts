@@ -1,4 +1,7 @@
-import { WorkTypeResponse } from '../schemas/dto/response/work-type.response';
+import {
+  DepartmentResponse,
+  WorkTypeResponse,
+} from '../schemas/dto/response/work-type.response';
 import { WorkTypeModel } from '../schemas/models/work-type.model';
 export interface InterfaceWorkTypeRepository {
   createWorkType(workType: WorkTypeModel): Promise<WorkTypeResponse | null>;
@@ -12,4 +15,5 @@ export interface InterfaceWorkTypeRepository {
   findWorkTypesByDepartmentId(
     departmentId: number,
   ): Promise<WorkTypeResponse[]>;
+  getAllDepartments(): Promise<DepartmentResponse[]>;
 }

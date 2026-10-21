@@ -1,6 +1,9 @@
 import { CreateWorkTypeRequest } from '../../domain/schemas/dto/request/create.work-type.request';
 import { UpdateWorkTypeRequest } from '../../domain/schemas/dto/request/update.work-type.request';
-import { WorkTypeResponse } from '../../domain/schemas/dto/response/work-type.response';
+import {
+  DepartmentResponse,
+  WorkTypeResponse,
+} from '../../domain/schemas/dto/response/work-type.response';
 
 export interface InterfaceWorkTypeUseCase {
   createWorkType(
@@ -16,4 +19,5 @@ export interface InterfaceWorkTypeUseCase {
   findWorkTypesByDepartmentId(
     departmentId: number,
   ): Promise<WorkTypeResponse[]>;
+  getAllDepartments(): Promise<DepartmentResponse[]>;
 }

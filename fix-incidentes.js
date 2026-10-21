@@ -6,12 +6,12 @@ async function main() {
     port: 5435,
     user: 'postgres',
     password: 'password-postgis',
-    database: 'sigepaa_production_geo'
+    database: 'sigepaa_production_geo',
   });
 
   try {
     await client.connect();
-    
+
     const res = await client.query(`
       WITH update_inc AS (
         UPDATE public.incidente_medidor im
@@ -34,8 +34,7 @@ async function main() {
       FROM update_inc
       RETURNING incidente_id;
     `);
-    console.log(`Éxito: Se actualizaron ${res.rowCount} incidentes desfasados.`);
-  } catch(e) {
+  } catch (e) {
     console.error('Error:', e.message);
   } finally {
     await client.end();

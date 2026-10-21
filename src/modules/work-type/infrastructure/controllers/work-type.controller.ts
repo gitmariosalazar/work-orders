@@ -47,4 +47,9 @@ export class WorkTypeController {
   async findWorkTypesByDepartmentId(@Payload() departmentId: number) {
     return this.workTypeService.findWorkTypesByDepartmentId(departmentId);
   }
+
+  @MessagePattern('work-type.get-all-departments')
+  async getAllDepartments() {
+    return this.workTypeService.getAllDepartments();
+  }
 }

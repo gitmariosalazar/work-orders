@@ -71,14 +71,6 @@ export class WorkOrderHistoryController {
       await this.workOrderHistoryService.findAllViewHistoriesWorkOrders(
         safePagination,
       );
-    console.log(typeof response[0].historicalId);
-    console.log(typeof response[0].createdByUserId);
-    console.log(typeof response[0].assignedToUserId);
-    console.log(typeof response[0].completedByUserId);
-    console.log(typeof response[0].historicalStateId);
-    console.log(typeof response[0].stateChangeUserId);
-    console.log(typeof response[0].changeNumber);
-    console.log(typeof response);
     return response;
   }
 

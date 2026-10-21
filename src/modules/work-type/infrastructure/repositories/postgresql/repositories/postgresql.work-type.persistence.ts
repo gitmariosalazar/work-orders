@@ -1,17 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { InterfaceWorkTypeRepository } from '../../../../domain/contracts/work-type.interface.repository';
-import { WorkTypeResponse } from '../../../../domain/schemas/dto/response/work-type.response';
+import {
+  DepartmentResponse,
+  WorkTypeResponse,
+} from '../../../../domain/schemas/dto/response/work-type.response';
 import { WorkTypeAdapter } from '../adapters/postgresql.work-type.adapter';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkTypeModel } from '../../../../domain/schemas/models/work-type.model';
-import { WorkTypeSqlResponse } from '../../../interfaces/sql/work-type.sql.response';
+import {
+  DepartmentSqlResponse,
+  WorkTypeSqlResponse,
+} from '../../../interfaces/sql/work-type.sql.response';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
 
 @Injectable()
-export class PostgreSQLWorkTypePersistence
-  implements InterfaceWorkTypeRepository
-{
+export class PostgreSQLWorkTypePersistence implements InterfaceWorkTypeRepository {
   constructor(private readonly databaseService: DatabaseAbstract) {}
 
   async getAllWorkTypes(): Promise<WorkTypeResponse[]> {
@@ -69,7 +73,9 @@ export class PostgreSQLWorkTypePersistence
         });
       }
 
-      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -100,7 +106,9 @@ export class PostgreSQLWorkTypePersistence
         });
       }
 
-      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -132,7 +140,9 @@ export class PostgreSQLWorkTypePersistence
         });
       }
 
-      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(result[0]);
+      return WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(
+        result[0],
+      );
     } catch (error) {
       throw error;
     }
@@ -155,6 +165,58 @@ export class PostgreSQLWorkTypePersistence
       return result.map((item) =>
         WorkTypeAdapter.fromWorkTypeSqlResponseToWorkTypeResponse(item),
       );
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllDepartments(): Promise<DepartmentResponse[]> {
+    try {
+      const query = `
+          SELECT
+              dt.id_departamento AS "department_id",
+              dt.nombre          AS "department_name",
+              dt.descripcion     AS "department_description",
+              COALESCE(
+                  json_agg(
+                      json_build_object(
+                          'type_code', tw.id_tipo_trabajo,
+                          'type_name', tw.nombre,
+                          'type_description', tw.descripcion,
+                          'suggested_priority', tw.prioridad_sugerida
+                      ) ORDER BY tw.nombre
+                  ) FILTER (WHERE tw.id_tipo_trabajo IS NOT NULL),
+                  '[]'::json
+              ) AS "work_types"
+          FROM work_orders.departamento_trabajo dt
+          LEFT JOIN work_orders.tipo_trabajo tw
+              ON dt.id_departamento = tw.id_departamento
+              AND tw.activo = true
+          WHERE dt.activo = true
+          GROUP BY
+              dt.id_departamento,
+              dt.nombre,
+              dt.descripcion
+          ORDER BY dt.id_departamento;
+        `;
+
+      const result = await this.databaseService.query<DepartmentSqlResponse>(
+        query,
+        [],
+      );
+
+      if (!result || result.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No departments found.',
+        });
+      }
+
+      const departments = result.map((item) =>
+        WorkTypeAdapter.fromDepartmentSqlResponseToDepartmentResponse(item),
+      );
+
+      return departments;
     } catch (error) {
       throw error;
     }

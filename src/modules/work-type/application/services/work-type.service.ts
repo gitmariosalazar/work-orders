@@ -2,7 +2,10 @@ import { InterfaceWorkTypeRepository } from '../../domain/contracts/work-type.in
 import { Inject, Injectable } from '@nestjs/common';
 import { InterfaceWorkTypeUseCase } from '../usecases/work-type.use-case.interface';
 import { CreateWorkTypeRequest } from '../../domain/schemas/dto/request/create.work-type.request';
-import { WorkTypeResponse } from '../../domain/schemas/dto/response/work-type.response';
+import {
+  DepartmentResponse,
+  WorkTypeResponse,
+} from '../../domain/schemas/dto/response/work-type.response';
 import { validateFields } from '../../../../shared/validators/fields.validators';
 import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../settings/environments/status-code';
@@ -181,6 +184,23 @@ export class WorkTypeService implements InterfaceWorkTypeUseCase {
       }
 
       return workTypes;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async getAllDepartments(): Promise<DepartmentResponse[]> {
+    try {
+      const departments = await this.workTypeRepository.getAllDepartments();
+
+      if (departments.length === 0) {
+        throw new RpcException({
+          statusCode: statusCode.NOT_FOUND,
+          message: 'No Departments found.',
+        });
+      }
+
+      return departments;
     } catch (error) {
       throw error;
     }

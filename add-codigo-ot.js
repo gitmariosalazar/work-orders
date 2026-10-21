@@ -6,18 +6,18 @@ async function main() {
     port: 5435,
     user: 'postgres',
     password: 'password-postgis',
-    database: 'sigepaa_production_geo'
+    database: 'sigepaa_production_geo',
   });
 
   try {
     await client.connect();
-    
+
     // 1. Agregar la columna
     await client.query(`
       ALTER TABLE public.incidente_medidor
       ADD COLUMN IF NOT EXISTS codigo_orden_trabajo varchar(30);
     `);
-    console.log("Columna agregada exitosamente.");
+    console.log('Columna agregada exitosamente.');
 
     // 2. Actualizar los registros existentes
     const res = await client.query(`
@@ -28,8 +28,7 @@ async function main() {
         AND ot.origen = 'INCIDENTE'
         AND im.codigo_orden_trabajo IS NULL;
     `);
-    console.log(`Éxito: Se actualizaron ${res.rowCount} incidentes con su código de OT correspondiente.`);
-  } catch(e) {
+  } catch (e) {
     console.error('Error:', e.message);
   } finally {
     await client.end();
