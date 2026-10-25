@@ -2414,6 +2414,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
 
     const query: string = `
+
       SELECT
         ot.id_orden_trabajo::TEXT                       AS work_order_id,
         ot.codigo_orden                                 AS order_code,
@@ -2447,13 +2448,17 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         public.ST_AsText(ot.geom_punto)                 AS coordinates,
         ot.metadata::TEXT                               AS metadata,
         ot.clave_catastral                              AS cadastral_key,
-        ot.is_deleted
+        dt.id_departamento AS department_id,
+        dt.nombre as department_name,
+        pot.nivel as priority_level
 
       FROM work_orders.orden_trabajo ot                          -- ✅ alias ot
       INNER JOIN work_orders.tipo_trabajo tt ON tt.id_tipo_trabajo = ot.id_tipo_trabajo
       LEFT  JOIN public.cliente        c    ON c.cliente_id        = ot.id_cliente
       LEFT  JOIN public.ciudadano      ciud ON ciud.ciudadano_id   = c.cliente_id
       LEFT  JOIN public.empresa        emp  ON emp.cliente_id      = c.cliente_id
+      LEFT JOIN work_orders.departamento_trabajo dt on tt.id_departamento = dt.id_departamento
+      LEFT JOIN work_orders.prioridad_orden_trabajo pot on ot.id_prioridad = pot.id_prioridad
       WHERE  ot.is_deleted = FALSE
       AND (
         $1::text IS NULL

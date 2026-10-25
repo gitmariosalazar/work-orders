@@ -50,6 +50,10 @@ export class WorkOrderAdapter {
       assignationDate: workOrderSQLResponse.assignation_date,
       completionDate: workOrderSQLResponse.completion_date,
       status: workOrderSQLResponse.status,
+      workTypeName: workOrderSQLResponse.work_type_name,
+      departmentId: workOrderSQLResponse.department_id,
+      departmentName: workOrderSQLResponse.department_name,
+      priorityLevel: workOrderSQLResponse.priority_level,
     };
   }
 

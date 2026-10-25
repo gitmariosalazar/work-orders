@@ -224,7 +224,7 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     clientId: string,
   ): Promise<WorkOrderResponse[]> {
     try {
-      const query = `
+      const query = /*sql*/ `
         SELECT 
           id_orden_trabajo::TEXT AS work_order_id,
           codigo_orden AS order_code,
@@ -243,10 +243,17 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
           public.ST_AsText(geom_punto) AS coordinates,
           metadata::TEXT AS metadata,
           clave_catastral AS cadastral_key,
-          is_deleted
-        FROM work_orders.orden_trabajo
-        WHERE id_cliente = $1
-          AND is_deleted = FALSE;
+          ot.is_deleted,
+          t.nombre AS work_type_name,
+          dt.id_departamento AS department_id,
+          dt.nombre as department_name,
+          pot.nivel as priority_level
+        FROM work_orders.orden_trabajo ot
+        LEFT JOIN work_orders.tipo_trabajo t on t.id_tipo_trabajo = ot.id_tipo_trabajo
+        LEFT JOIN work_orders.departamento_trabajo dt on t.id_departamento = dt.id_departamento
+        LEFT JOIN work_orders.prioridad_orden_trabajo pot on ot.id_prioridad = pot.id_prioridad
+        WHERE ot.id_cliente = $1
+          AND ot.is_deleted = FALSE;
       `;
       const values = [clientId];
 
@@ -267,27 +274,34 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
     try {
       const query = `
         SELECT
-          id_orden_trabajo::TEXT AS work_order_id,
-          codigo_orden AS order_code,
-          id_tipo_trabajo AS work_type_id,
-          id_prioridad AS priority_id,
-          id_cliente::TEXT AS client_id,
-          fecha_creacion AS creation_date,
-          fecha_asignacion AS assignation_date,
-          fecha_completada AS completion_date,
-          estado AS status,
-          descripcion AS description,
-          direccion AS location,
-          created_by::TEXT AS created_user_id,
-          usuario_asignacion::TEXT AS assigned_user_id,
-          usuario_completacion::TEXT AS completed_user_id,
-          public.ST_AsText(geom_punto) AS coordinates,
-          metadata::TEXT AS metadata,
-          clave_catastral AS cadastral_key,
-          is_deleted
-        FROM work_orders.orden_trabajo
-        WHERE codigo_orden = $1
-          AND is_deleted = FALSE;
+          ot.id_orden_trabajo::TEXT AS work_order_id,
+          ot.codigo_orden AS order_code,
+          ot.id_tipo_trabajo AS work_type_id,
+          ot.id_prioridad AS priority_id,
+          ot.id_cliente::TEXT AS client_id,
+          ot.fecha_creacion AS creation_date,
+          ot.fecha_asignacion AS assignation_date,
+          ot.fecha_completada AS completion_date,
+          ot.estado AS status,
+          ot.descripcion AS description,
+          ot.direccion AS location,
+          ot.created_by::TEXT AS created_user_id,
+          ot.usuario_asignacion::TEXT AS assigned_user_id,
+          ot.usuario_completacion::TEXT AS completed_user_id,
+          public.ST_AsText(ot.geom_punto) AS coordinates,
+          ot.metadata::TEXT AS metadata,
+          ot.clave_catastral AS cadastral_key,
+          ot.is_deleted,
+          t.nombre AS work_type_name,
+          dt.id_departamento AS department_id,
+          dt.nombre as department_name,
+          pot.nivel as priority_level
+        FROM work_orders.orden_trabajo ot
+        LEFT JOIN work_orders.tipo_trabajo t on t.id_tipo_trabajo = ot.id_tipo_trabajo
+        LEFT JOIN work_orders.departamento_trabajo dt on t.id_departamento = dt.id_departamento
+        LEFT JOIN work_orders.prioridad_orden_trabajo pot on ot.id_prioridad = pot.id_prioridad
+        WHERE ot.codigo_orden = $1
+          AND ot.is_deleted = FALSE;
       `;
       const values = [orderCode];
 
@@ -319,31 +333,38 @@ export class PostgreSQLWorkOrderPersistence implements InterfaceWorkOrderReposit
 
       const query = `
         SELECT 
-          id_orden_trabajo::TEXT AS work_order_id,
-          codigo_orden AS order_code,
-          id_tipo_trabajo AS work_type_id,
-          id_prioridad AS priority_id,
-          id_cliente::TEXT AS client_id,
-          fecha_creacion AS creation_date,
-          fecha_asignacion AS assignation_date,
-          fecha_completada AS completion_date,
-          estado AS status,
-          descripcion AS description,
-          direccion AS location,
-          created_by::TEXT AS created_user_id,
-          usuario_asignacion::TEXT AS assigned_user_id,
-          usuario_completacion::TEXT AS completed_user_id,
-          public.ST_AsText(geom_punto) AS coordinates,
-          metadata::TEXT AS metadata,
-          clave_catastral AS cadastral_key,
-          is_deleted
-        FROM work_orders.orden_trabajo
-        WHERE is_deleted = FALSE
+          ot.id_orden_trabajo::TEXT AS work_order_id,
+          ot.codigo_orden AS order_code,
+          ot.id_tipo_trabajo AS work_type_id,
+          ot.id_prioridad AS priority_id,
+          ot.id_cliente::TEXT AS client_id,
+          ot.fecha_creacion AS creation_date,
+          ot.fecha_asignacion AS assignation_date,
+          ot.fecha_completada AS completion_date,
+          ot.estado AS status,
+          ot.descripcion AS description,
+          ot.direccion AS location,
+          ot.created_by::TEXT AS created_user_id,
+          ot.usuario_asignacion::TEXT AS assigned_user_id,
+          ot.usuario_completacion::TEXT AS completed_user_id,
+          public.ST_AsText(ot.geom_punto) AS coordinates,
+          ot.metadata::TEXT AS metadata,
+          ot.clave_catastral AS cadastral_key,
+          ot.is_deleted,
+          t.nombre AS work_type_name,
+          dt.id_departamento AS department_id,
+          dt.nombre as department_name,
+          pot.nivel as priority_level
+        FROM work_orders.orden_trabajo ot
+        LEFT JOIN work_orders.tipo_trabajo t on t.id_tipo_trabajo = ot.id_tipo_trabajo
+        LEFT JOIN work_orders.departamento_trabajo dt on t.id_departamento = dt.id_departamento
+        LEFT JOIN work_orders.prioridad_orden_trabajo pot on ot.id_prioridad = pot.id_prioridad
+        WHERE ot.is_deleted = FALSE
           AND ($1::text IS NULL
-            OR clave_catastral ILIKE $1::text
-            OR id_cliente::TEXT ILIKE $1::text
-            OR codigo_orden ILIKE $1::text)
-        ORDER BY fecha_creacion DESC
+            OR ot.clave_catastral ILIKE $1::text
+            OR ot.id_cliente::TEXT ILIKE $1::text
+            OR ot.codigo_orden ILIKE $1::text)
+        ORDER BY ot.fecha_creacion DESC
         LIMIT COALESCE($2::int, 100) OFFSET COALESCE($3::int, 0);
       `;
 

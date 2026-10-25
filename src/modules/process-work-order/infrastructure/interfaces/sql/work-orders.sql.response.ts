@@ -408,4 +408,7 @@ export interface WorkOrderListItemSqlResult {
   /** JSON serializado como TEXT en la BD */
   metadata: string | null;
   is_deleted: boolean;
+  department_id?: number;
+  department_name?: string;
+  priority_level?: string;
 }

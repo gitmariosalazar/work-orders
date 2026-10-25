@@ -349,6 +349,9 @@ export class ProcessWorkOrderAdapter {
       completedUserId: sqlResult.completed_user_id,
       metadata: sqlResult.metadata ? JSON.parse(sqlResult.metadata) : null,
       isDeleted: sqlResult.is_deleted,
+      departmentId: sqlResult.department_id,
+      departmentName: sqlResult.department_name,
+      priorityLevel: sqlResult.priority_level,
     };
   }
 }

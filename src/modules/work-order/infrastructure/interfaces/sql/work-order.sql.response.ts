@@ -17,4 +17,8 @@ export interface WorkOrderSQLResponse {
   metadata?: string;
   cadastral_key?: string;
   is_deleted?: boolean;
+  work_type_name?: string;
+  department_id?: number;
+  department_name?: string;
+  priority_level?: string;
 }
