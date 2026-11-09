@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
-import { InterfaceTrendsDashboardRepository } from '../../../../domain/contracts/dashboard.interface.repository';
+import {
+  InterfaceTrendsDashboardRepository,
+  UserParams,
+} from '../../../../domain/contracts/dashboard.interface.repository';
+import { DashboardUserPolicy } from '../../../../domain/policies/dashboard-user.policy';
 import {
   DailyTrendItemResponse,
   TerritorialConcentrationItemResponse,
@@ -17,15 +21,21 @@ export class PostgresqlTrendsDashboardPersistence
     super(databaseService);
   }
 
-  getDailyTrend(): Promise<DailyTrendItemResponse[]> {
-    return this.fetchList<DailyTrendItemResponse>(DASHBOARD_QUERIES.dailyTrend);
+  getDailyTrend(user?: UserParams): Promise<DailyTrendItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
+    return this.fetchList<DailyTrendItemResponse>(
+      DASHBOARD_QUERIES.dailyTrend,
+      [filterUserId],
+    );
   }
 
-  getTerritorialConcentration(): Promise<
-    TerritorialConcentrationItemResponse[]
-  > {
+  getTerritorialConcentration(
+    user?: UserParams,
+  ): Promise<TerritorialConcentrationItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<TerritorialConcentrationItemResponse>(
       DASHBOARD_QUERIES.territorialConcentration,
+      [filterUserId],
     );
   }
 }

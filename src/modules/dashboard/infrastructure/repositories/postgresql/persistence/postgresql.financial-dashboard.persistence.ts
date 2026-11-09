@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
-import { InterfaceFinancialDashboardRepository } from '../../../../domain/contracts/dashboard.interface.repository';
+import {
+  InterfaceFinancialDashboardRepository,
+  UserParams,
+} from '../../../../domain/contracts/dashboard.interface.repository';
+import { DashboardUserPolicy } from '../../../../domain/policies/dashboard-user.policy';
 import {
   EconomicBalanceItemResponse,
   MaterialCostItemResponse,
@@ -17,15 +21,21 @@ export class PostgresqlFinancialDashboardPersistence
     super(databaseService);
   }
 
-  getMaterialCosts(): Promise<MaterialCostItemResponse[]> {
+  getMaterialCosts(user?: UserParams): Promise<MaterialCostItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<MaterialCostItemResponse>(
       DASHBOARD_QUERIES.materialCosts,
+      [filterUserId],
     );
   }
 
-  getEconomicBalance(): Promise<EconomicBalanceItemResponse[]> {
+  getEconomicBalance(
+    user?: UserParams,
+  ): Promise<EconomicBalanceItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<EconomicBalanceItemResponse>(
       DASHBOARD_QUERIES.economicBalance,
+      [filterUserId],
     );
   }
 }

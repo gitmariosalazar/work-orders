@@ -1,118 +1,128 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { DashboardService } from '../../application/services/dashboard.service';
+import { UserParams } from '../../domain/contracts/dashboard.interface.repository';
+
+export interface DashboardMessagePayload {
+  limit?: number;
+  technicianId?: string;
+  user?: UserParams;
+}
 
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   @MessagePattern('work-orders.dashboard.funnel-summary')
-  getFunnelSummary() {
-    return this.dashboardService.getFunnelSummary();
+  getFunnelSummary(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getFunnelSummary(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.state-matrix')
-  getStateMatrix() {
-    return this.dashboardService.getStateMatrix();
+  getStateMatrix(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getStateMatrix(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.origin-channel')
-  getOriginChannelBreakdown() {
-    return this.dashboardService.getOriginChannelBreakdown();
+  getOriginChannelBreakdown(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getOriginChannelBreakdown(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.category-department')
-  getCategoryDepartmentBreakdown() {
-    return this.dashboardService.getCategoryDepartmentBreakdown();
+  getCategoryDepartmentBreakdown(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getCategoryDepartmentBreakdown(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.sync-discrepancies')
-  getSyncDiscrepancies() {
-    return this.dashboardService.getSyncDiscrepancies();
+  getSyncDiscrepancies(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getSyncDiscrepancies(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.dispatch-control')
-  getDispatchControl(@Payload() data: { limit?: number }) {
-    return this.dashboardService.getDispatchControl(data?.limit);
+  getDispatchControl(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getDispatchControl(data?.limit, data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.header-kpis')
-  getHeaderKpis() {
-    return this.dashboardService.getHeaderKpis();
+  getHeaderKpis(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getHeaderKpis(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.status-distribution')
-  getStatusDistribution() {
-    return this.dashboardService.getStatusDistribution();
+  getStatusDistribution(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getStatusDistribution(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.priority-distribution')
-  getPriorityDistribution() {
-    return this.dashboardService.getPriorityDistribution();
+  getPriorityDistribution(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getPriorityDistribution(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.work-type-performance')
-  getWorkTypePerformance() {
-    return this.dashboardService.getWorkTypePerformance();
+  getWorkTypePerformance(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getWorkTypePerformance(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.key-statistics-matrix')
-  getKeyStatisticsMatrix() {
-    return this.dashboardService.getKeyStatisticsMatrix();
+  getKeyStatisticsMatrix(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getKeyStatisticsMatrix(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.executive-overview')
-  getExecutiveOverview() {
-    return this.dashboardService.getExecutiveOverview();
+  getExecutiveOverview(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getExecutiveOverview(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.technician-performance')
-  getTechnicianPerformance() {
-    return this.dashboardService.getTechnicianPerformance();
+  getTechnicianPerformance(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getTechnicianPerformance(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.technician-daily-feed')
-  getTechnicianDailyFeed(@Payload() data: { technicianId?: string }) {
-    return this.dashboardService.getTechnicianDailyFeed(data?.technicianId);
+  getTechnicianDailyFeed(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getTechnicianDailyFeed(
+      data?.technicianId,
+      data?.user,
+    );
   }
 
   @MessagePattern('work-orders.dashboard.crew-assignments')
-  getCrewAssignments() {
-    return this.dashboardService.getCrewAssignments();
+  getCrewAssignments(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getCrewAssignments(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.sla-monitor')
-  getSlaMonitor() {
-    return this.dashboardService.getSlaMonitor();
+  getSlaMonitor(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getSlaMonitor(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.quality-indicators')
-  getQualityIndicators() {
-    return this.dashboardService.getQualityIndicators();
+  getQualityIndicators(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getQualityIndicators(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.escalation-audit')
-  getEscalationAudit() {
-    return this.dashboardService.getEscalationAudit();
+  getEscalationAudit(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getEscalationAudit(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.material-costs')
-  getMaterialCosts() {
-    return this.dashboardService.getMaterialCosts();
+  getMaterialCosts(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getMaterialCosts(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.economic-balance')
-  getEconomicBalance() {
-    return this.dashboardService.getEconomicBalance();
+  getEconomicBalance(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getEconomicBalance(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.daily-trend')
-  getDailyTrend() {
-    return this.dashboardService.getDailyTrend();
+  getDailyTrend(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getDailyTrend(data?.user);
   }
 
   @MessagePattern('work-orders.dashboard.territorial-concentration')
-  getTerritorialConcentration() {
-    return this.dashboardService.getTerritorialConcentration();
+  getTerritorialConcentration(@Payload() data?: DashboardMessagePayload) {
+    return this.dashboardService.getTerritorialConcentration(data?.user);
   }
 }

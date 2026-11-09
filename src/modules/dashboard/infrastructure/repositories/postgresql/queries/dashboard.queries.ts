@@ -49,6 +49,7 @@ WITH base_reportes_ot AS (
         )
         AND ot.is_deleted = FALSE
     WHERE im.is_deleted = FALSE
+      AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 )
 SELECT
     COUNT(*) AS total_reportes_ingresados,
@@ -96,6 +97,7 @@ LEFT JOIN work_orders.orden_trabajo ot
     AND ot.is_deleted = FALSE
 LEFT JOIN work_orders.cat_estado_orden ceo ON ot.estado = ceo.codigo
 WHERE im.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY im.estado, ot.estado, ceo.nombre
 ORDER BY 
     CASE im.estado
@@ -129,6 +131,7 @@ LEFT JOIN work_orders.orden_trabajo ot
     )
     AND ot.is_deleted = FALSE
 WHERE im.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY im.origen_reporte
 ORDER BY total_reportes DESC
 `,
@@ -158,6 +161,7 @@ LEFT JOIN work_orders.orden_trabajo ot
 LEFT JOIN work_orders.tipo_trabajo tt ON ot.id_tipo_trabajo = tt.id_tipo_trabajo
 LEFT JOIN work_orders.departamento_trabajo dt ON tt.id_departamento = dt.id_departamento
 WHERE im.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY c.nombre, t.nombre, t.prioridad_sugerida, dt.nombre
 ORDER BY total_incidentes DESC
 `,
@@ -192,6 +196,7 @@ JOIN work_orders.orden_trabajo ot
 LEFT JOIN public.usuarios u ON ot.usuario_asignado = u.usuario_id
 LEFT JOIN public.empleados emp ON u.usuario_id = emp.usuario_id
 WHERE im.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
   AND (
       (ot.estado = 'COMPLETADA' AND im.estado != 'RESUELTO')
       OR (im.estado = 'REPORTADO' AND ot.estado IN ('ASIGNADA', 'EN_PROGRESO'))
@@ -240,6 +245,7 @@ LEFT JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_pr
 LEFT JOIN public.usuarios u ON ot.usuario_asignado = u.usuario_id
 LEFT JOIN public.empleados emp ON u.usuario_id = emp.usuario_id
 WHERE im.is_deleted = FALSE
+  AND ($2::text IS NULL OR ot.usuario_asignado::text = $2::text)
 ORDER BY 
     CASE im.prioridad
         WHEN 'CRITICA' THEN 1
@@ -280,6 +286,7 @@ LEFT JOIN (
     GROUP BY id_orden_trabajo
 ) mat ON ot.id_orden_trabajo = mat.id_orden_trabajo
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 `,
   statusDistribution: `
 SELECT
@@ -303,6 +310,7 @@ SELECT
 FROM work_orders.orden_trabajo ot
 JOIN work_orders.cat_estado_orden ceo ON ot.estado = ceo.codigo
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY ceo.codigo, ceo.nombre, ot.estado, ceo.descripcion
 ORDER BY quantity DESC
 `,
@@ -328,6 +336,7 @@ SELECT
 FROM work_orders.orden_trabajo ot
 JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_prioridad
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY pot.nivel, pot.id_prioridad, pot.descripcion, pot.sla_horas
 ORDER BY
     CASE pot.nivel
@@ -354,6 +363,7 @@ FROM work_orders.orden_trabajo ot
 JOIN work_orders.tipo_trabajo tt ON ot.id_tipo_trabajo = tt.id_tipo_trabajo
 JOIN work_orders.departamento_trabajo dt ON tt.id_departamento = dt.id_departamento
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY tt.nombre, tt.id_tipo_trabajo, dt.nombre
 ORDER BY quantity DESC
 `,
@@ -402,6 +412,7 @@ LEFT JOIN (
     GROUP BY id_orden_trabajo
 ) trab ON ot.id_orden_trabajo = trab.id_orden_trabajo
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY eot.codigo, eot.nombre, ot.id_tipo_trabajo, tt.nombre, dt.id_departamento, dt.nombre
 ORDER BY dt.nombre, tt.nombre, total_orders DESC
 `,
@@ -427,6 +438,7 @@ JOIN public.usuarios u ON ot.usuario_asignado = u.usuario_id
 LEFT JOIN public.empleados emp ON u.usuario_id = emp.usuario_id
 JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_prioridad
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR u.usuario_id::text = $1::text)
 GROUP BY u.usuario_id, emp.nombres, emp.apellidos, u.username, emp.cedula, emp.telefono_interno
 ORDER BY total_backlog_activo DESC, total_completadas DESC
 `,
@@ -494,6 +506,7 @@ LEFT JOIN work_orders.rol_trabajador rt ON ato.id_rol = rt.id_rol
 WHERE ato.is_deleted = FALSE 
   AND ot.is_deleted = FALSE
   AND ot.estado NOT IN ('COMPLETADA', 'CANCELADA')
+  AND ($1::text IS NULL OR ato.id_trabajador::text = $1::text OR ot.usuario_asignado::text = $1::text)
 ORDER BY ot.codigo_orden, ato.es_responsable DESC, nombre_trabajador ASC
 `,
   slaMonitor: `
@@ -524,6 +537,7 @@ LEFT JOIN public.usuarios u ON ot.usuario_asignado = u.usuario_id
 LEFT JOIN public.empleados emp ON u.usuario_id = emp.usuario_id
 WHERE ot.is_deleted = FALSE
   AND ot.estado NOT IN ('COMPLETADA', 'CANCELADA')
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 ORDER BY horas_holgura_sla ASC
 `,
   qualityIndicators: `
@@ -545,6 +559,7 @@ JOIN work_orders.departamento_trabajo dt ON tt.id_departamento = dt.id_departame
 LEFT JOIN work_orders.inspeccion_preparacion ip ON ot.id_orden_trabajo = ip.id_orden_trabajo AND ip.is_deleted = FALSE
 LEFT JOIN work_orders.control_calidad cc ON ot.id_orden_trabajo = cc.id_orden_trabajo AND cc.is_deleted = FALSE
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY dt.nombre, tt.nombre
 ORDER BY total_ordenes_inspeccionadas DESC
 `,
@@ -564,6 +579,7 @@ LEFT JOIN public.usuarios u ON ot.usuario_asignado = u.usuario_id
 LEFT JOIN public.empleados emp ON u.usuario_id = emp.usuario_id
 WHERE ot.is_deleted = FALSE
   AND ot.escala_supervisor = TRUE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 ORDER BY ot.fecha_creacion DESC
 `,
   materialCosts: `
@@ -582,6 +598,7 @@ JOIN work_orders.tipo_trabajo tt ON ot.id_tipo_trabajo = tt.id_tipo_trabajo
 JOIN work_orders.departamento_trabajo dt ON tt.id_departamento = dt.id_departamento
 WHERE dotm.is_deleted = FALSE 
   AND ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY dt.nombre, tt.nombre, dotm.codigo, dotm.nombre
 ORDER BY costo_total_materiales DESC
 `,
@@ -614,6 +631,7 @@ LEFT JOIN (
     GROUP BY id_orden_trabajo
 ) ad ON ot.id_orden_trabajo = ad.id_orden_trabajo
 WHERE ot.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY DATE_TRUNC('month', ot.fecha_creacion)
 ORDER BY mes DESC
 `,
@@ -635,12 +653,14 @@ ots_creadas AS (
     SELECT DATE_TRUNC('day', fecha_creacion)::date AS fecha, COUNT(*) AS nuevas_ots
     FROM work_orders.orden_trabajo
     WHERE is_deleted = FALSE AND fecha_creacion >= CURRENT_DATE - INTERVAL '30 days'
+      AND ($1::text IS NULL OR usuario_asignado::text = $1::text)
     GROUP BY DATE_TRUNC('day', fecha_creacion)
 ),
 ots_completadas AS (
     SELECT DATE_TRUNC('day', fecha_completada)::date AS fecha, COUNT(*) AS ots_completadas
     FROM work_orders.orden_trabajo
     WHERE is_deleted = FALSE AND fecha_completada >= CURRENT_DATE - INTERVAL '30 days'
+      AND ($1::text IS NULL OR usuario_asignado::text = $1::text)
     GROUP BY DATE_TRUNC('day', fecha_completada)
 )
 SELECT
@@ -677,6 +697,7 @@ LEFT JOIN public.predio pr ON ac.clave_catastral = pr.clave_catastral
 LEFT JOIN public.direccion dir ON pr.direccion = dir.calle_principal -- o vinculación geográfica
 LEFT JOIN public.parroquia p ON dir.parroquia_id = p.parroquia_id
 WHERE im.is_deleted = FALSE
+  AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
 GROUP BY p.nombre, ac.sector
 HAVING COUNT(DISTINCT im.incidente_id) > 0 OR COUNT(DISTINCT ot.id_orden_trabajo) > 0
 ORDER BY total_incidentes_zona DESC
@@ -709,6 +730,7 @@ SELECT jsonb_build_object(
             )
             AND ot.is_deleted = FALSE
         WHERE im.is_deleted = FALSE
+          AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
     ),
     'kpis_ordenes_trabajo', (
         SELECT jsonb_build_object(
@@ -729,6 +751,7 @@ SELECT jsonb_build_object(
         FROM work_orders.orden_trabajo ot
         JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_prioridad
         WHERE ot.is_deleted = FALSE
+          AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
     ),
     'distribucion_estados', (
         SELECT COALESCE(jsonb_agg(jsonb_build_object(
@@ -746,6 +769,7 @@ SELECT jsonb_build_object(
             FROM work_orders.orden_trabajo ot
             JOIN work_orders.cat_estado_orden ceo ON ot.estado = ceo.codigo
             WHERE ot.is_deleted = FALSE
+              AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
             GROUP BY ot.estado, ceo.nombre
             ORDER BY cantidad DESC
         ) t
@@ -768,6 +792,7 @@ SELECT jsonb_build_object(
             FROM work_orders.orden_trabajo ot
             JOIN work_orders.prioridad_orden_trabajo pot ON ot.id_prioridad = pot.id_prioridad
             WHERE ot.is_deleted = FALSE
+              AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
             GROUP BY pot.id_prioridad, pot.nivel, pot.sla_horas
             ORDER BY 
                 CASE pot.nivel
@@ -807,6 +832,7 @@ SELECT jsonb_build_object(
             WHERE ot.is_deleted = FALSE 
               AND ot.estado NOT IN ('COMPLETADA', 'CANCELADA')
               AND pot.nivel IN ('Emergencia', 'Urgente')
+              AND ($1::text IS NULL OR ot.usuario_asignado::text = $1::text)
             ORDER BY 
                 CASE pot.nivel WHEN 'Emergencia' THEN 1 ELSE 2 END,
                 horas_transcurridas DESC

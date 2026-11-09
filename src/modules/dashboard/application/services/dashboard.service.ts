@@ -6,7 +6,9 @@ import {
   InterfaceQualitySlaDashboardRepository,
   InterfaceTechnicianDashboardRepository,
   InterfaceTrendsDashboardRepository,
+  UserParams,
 } from '../../domain/contracts/dashboard.interface.repository';
+import { DashboardUserPolicy } from '../../domain/policies/dashboard-user.policy';
 import {
   CategoryDepartmentItemResponse,
   CrewAssignmentItemResponse,
@@ -52,100 +54,132 @@ export class DashboardService {
     private readonly trendsRepository: InterfaceTrendsDashboardRepository,
   ) {}
 
-  getFunnelSummary(): Promise<FunnelSummaryResponse | null> {
-    return this.comparisonRepository.getFunnelSummary();
+  getFunnelSummary(user?: UserParams): Promise<FunnelSummaryResponse | null> {
+    return this.comparisonRepository.getFunnelSummary(user);
   }
 
-  getStateMatrix(): Promise<StateMatrixItemResponse[]> {
-    return this.comparisonRepository.getStateMatrix();
+  getStateMatrix(user?: UserParams): Promise<StateMatrixItemResponse[]> {
+    return this.comparisonRepository.getStateMatrix(user);
   }
 
-  getOriginChannelBreakdown(): Promise<OriginChannelItemResponse[]> {
-    return this.comparisonRepository.getOriginChannelBreakdown();
+  getOriginChannelBreakdown(
+    user?: UserParams,
+  ): Promise<OriginChannelItemResponse[]> {
+    return this.comparisonRepository.getOriginChannelBreakdown(user);
   }
 
-  getCategoryDepartmentBreakdown(): Promise<CategoryDepartmentItemResponse[]> {
-    return this.comparisonRepository.getCategoryDepartmentBreakdown();
+  getCategoryDepartmentBreakdown(
+    user?: UserParams,
+  ): Promise<CategoryDepartmentItemResponse[]> {
+    return this.comparisonRepository.getCategoryDepartmentBreakdown(user);
   }
 
-  getSyncDiscrepancies(): Promise<SyncDiscrepancyItemResponse[]> {
-    return this.comparisonRepository.getSyncDiscrepancies();
+  getSyncDiscrepancies(
+    user?: UserParams,
+  ): Promise<SyncDiscrepancyItemResponse[]> {
+    return this.comparisonRepository.getSyncDiscrepancies(user);
   }
 
-  getDispatchControl(limit?: number): Promise<DispatchControlItemResponse[]> {
+  getDispatchControl(
+    limit?: number,
+    user?: UserParams,
+  ): Promise<DispatchControlItemResponse[]> {
     const safeLimit =
       Number.isInteger(limit) && limit !== undefined && limit > 0
         ? Math.min(limit, MAX_DISPATCH_CONTROL_LIMIT)
         : DEFAULT_DISPATCH_CONTROL_LIMIT;
-    return this.comparisonRepository.getDispatchControl(safeLimit);
+    return this.comparisonRepository.getDispatchControl(safeLimit, user);
   }
 
-  getHeaderKpis(): Promise<HeaderKpisResponse | null> {
-    return this.executiveRepository.getHeaderKpis();
+  getHeaderKpis(user?: UserParams): Promise<HeaderKpisResponse | null> {
+    return this.executiveRepository.getHeaderKpis(user);
   }
 
-  getStatusDistribution(): Promise<StatusDistributionItemResponse[]> {
-    return this.executiveRepository.getStatusDistribution();
+  getStatusDistribution(
+    user?: UserParams,
+  ): Promise<StatusDistributionItemResponse[]> {
+    return this.executiveRepository.getStatusDistribution(user);
   }
 
-  getPriorityDistribution(): Promise<PriorityDistributionItemResponse[]> {
-    return this.executiveRepository.getPriorityDistribution();
+  getPriorityDistribution(
+    user?: UserParams,
+  ): Promise<PriorityDistributionItemResponse[]> {
+    return this.executiveRepository.getPriorityDistribution(user);
   }
 
-  getWorkTypePerformance(): Promise<WorkTypePerformanceItemResponse[]> {
-    return this.executiveRepository.getWorkTypePerformance();
+  getWorkTypePerformance(
+    user?: UserParams,
+  ): Promise<WorkTypePerformanceItemResponse[]> {
+    return this.executiveRepository.getWorkTypePerformance(user);
   }
 
-  getKeyStatisticsMatrix(): Promise<KeyStatisticsMatrixItemResponse[]> {
-    return this.executiveRepository.getKeyStatisticsMatrix();
+  getKeyStatisticsMatrix(
+    user?: UserParams,
+  ): Promise<KeyStatisticsMatrixItemResponse[]> {
+    return this.executiveRepository.getKeyStatisticsMatrix(user);
   }
 
-  getExecutiveOverview(): Promise<ExecutiveOverviewResponse | null> {
-    return this.executiveRepository.getExecutiveOverview();
+  getExecutiveOverview(
+    user?: UserParams,
+  ): Promise<ExecutiveOverviewResponse | null> {
+    return this.executiveRepository.getExecutiveOverview(user);
   }
 
-  getTechnicianPerformance(): Promise<TechnicianPerformanceItemResponse[]> {
-    return this.technicianRepository.getTechnicianPerformance();
+  getTechnicianPerformance(
+    user?: UserParams,
+  ): Promise<TechnicianPerformanceItemResponse[]> {
+    return this.technicianRepository.getTechnicianPerformance(user);
   }
 
   getTechnicianDailyFeed(
     technicianId?: string,
+    user?: UserParams,
   ): Promise<TechnicianDailyFeedItemResponse[]> {
-    const normalizedId = technicianId?.trim() ? technicianId.trim() : null;
-    return this.technicianRepository.getTechnicianDailyFeed(normalizedId);
+    // Si no es admin, se neutraliza cualquier intento de IDOR forzando su propio user.id
+    const effectiveTechnicianId = DashboardUserPolicy.isAdmin(user)
+      ? (technicianId?.trim() || null)
+      : (user?.id?.trim() || null);
+    return this.technicianRepository.getTechnicianDailyFeed(
+      effectiveTechnicianId,
+      user,
+    );
   }
 
-  getCrewAssignments(): Promise<CrewAssignmentItemResponse[]> {
-    return this.technicianRepository.getCrewAssignments();
+  getCrewAssignments(user?: UserParams): Promise<CrewAssignmentItemResponse[]> {
+    return this.technicianRepository.getCrewAssignments(user);
   }
 
-  getSlaMonitor(): Promise<SlaMonitorItemResponse[]> {
-    return this.qualitySlaRepository.getSlaMonitor();
+  getSlaMonitor(user?: UserParams): Promise<SlaMonitorItemResponse[]> {
+    return this.qualitySlaRepository.getSlaMonitor(user);
   }
 
-  getQualityIndicators(): Promise<QualityIndicatorItemResponse[]> {
-    return this.qualitySlaRepository.getQualityIndicators();
+  getQualityIndicators(
+    user?: UserParams,
+  ): Promise<QualityIndicatorItemResponse[]> {
+    return this.qualitySlaRepository.getQualityIndicators(user);
   }
 
-  getEscalationAudit(): Promise<EscalationAuditItemResponse[]> {
-    return this.qualitySlaRepository.getEscalationAudit();
+  getEscalationAudit(user?: UserParams): Promise<EscalationAuditItemResponse[]> {
+    return this.qualitySlaRepository.getEscalationAudit(user);
   }
 
-  getMaterialCosts(): Promise<MaterialCostItemResponse[]> {
-    return this.financialRepository.getMaterialCosts();
+  getMaterialCosts(user?: UserParams): Promise<MaterialCostItemResponse[]> {
+    return this.financialRepository.getMaterialCosts(user);
   }
 
-  getEconomicBalance(): Promise<EconomicBalanceItemResponse[]> {
-    return this.financialRepository.getEconomicBalance();
+  getEconomicBalance(
+    user?: UserParams,
+  ): Promise<EconomicBalanceItemResponse[]> {
+    return this.financialRepository.getEconomicBalance(user);
   }
 
-  getDailyTrend(): Promise<DailyTrendItemResponse[]> {
-    return this.trendsRepository.getDailyTrend();
+  getDailyTrend(user?: UserParams): Promise<DailyTrendItemResponse[]> {
+    return this.trendsRepository.getDailyTrend(user);
   }
 
-  getTerritorialConcentration(): Promise<
-    TerritorialConcentrationItemResponse[]
-  > {
-    return this.trendsRepository.getTerritorialConcentration();
+  getTerritorialConcentration(
+    user?: UserParams,
+  ): Promise<TerritorialConcentrationItemResponse[]> {
+    return this.trendsRepository.getTerritorialConcentration(user);
   }
 }

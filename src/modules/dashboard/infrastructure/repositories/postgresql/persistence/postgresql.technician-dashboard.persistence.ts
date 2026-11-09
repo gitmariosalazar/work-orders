@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
-import { InterfaceTechnicianDashboardRepository } from '../../../../domain/contracts/dashboard.interface.repository';
+import {
+  InterfaceTechnicianDashboardRepository,
+  UserParams,
+} from '../../../../domain/contracts/dashboard.interface.repository';
+import { DashboardUserPolicy } from '../../../../domain/policies/dashboard-user.policy';
 import {
   CrewAssignmentItemResponse,
   TechnicianDailyFeedItemResponse,
@@ -18,14 +22,19 @@ export class PostgresqlTechnicianDashboardPersistence
     super(databaseService);
   }
 
-  getTechnicianPerformance(): Promise<TechnicianPerformanceItemResponse[]> {
+  getTechnicianPerformance(
+    user?: UserParams,
+  ): Promise<TechnicianPerformanceItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<TechnicianPerformanceItemResponse>(
       DASHBOARD_QUERIES.technicianPerformance,
+      [filterUserId],
     );
   }
 
   getTechnicianDailyFeed(
     technicianId: string | null,
+    _user?: UserParams,
   ): Promise<TechnicianDailyFeedItemResponse[]> {
     return this.fetchList<TechnicianDailyFeedItemResponse>(
       DASHBOARD_QUERIES.technicianDailyFeed,
@@ -33,9 +42,11 @@ export class PostgresqlTechnicianDashboardPersistence
     );
   }
 
-  getCrewAssignments(): Promise<CrewAssignmentItemResponse[]> {
+  getCrewAssignments(user?: UserParams): Promise<CrewAssignmentItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<CrewAssignmentItemResponse>(
       DASHBOARD_QUERIES.crewAssignments,
+      [filterUserId],
     );
   }
 }

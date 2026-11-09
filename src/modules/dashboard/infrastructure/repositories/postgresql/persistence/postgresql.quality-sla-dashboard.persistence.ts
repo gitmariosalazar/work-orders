@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
-import { InterfaceQualitySlaDashboardRepository } from '../../../../domain/contracts/dashboard.interface.repository';
+import {
+  InterfaceQualitySlaDashboardRepository,
+  UserParams,
+} from '../../../../domain/contracts/dashboard.interface.repository';
+import { DashboardUserPolicy } from '../../../../domain/policies/dashboard-user.policy';
 import {
   EscalationAuditItemResponse,
   QualityIndicatorItemResponse,
@@ -18,19 +22,29 @@ export class PostgresqlQualitySlaDashboardPersistence
     super(databaseService);
   }
 
-  getSlaMonitor(): Promise<SlaMonitorItemResponse[]> {
-    return this.fetchList<SlaMonitorItemResponse>(DASHBOARD_QUERIES.slaMonitor);
-  }
-
-  getQualityIndicators(): Promise<QualityIndicatorItemResponse[]> {
-    return this.fetchList<QualityIndicatorItemResponse>(
-      DASHBOARD_QUERIES.qualityIndicators,
+  getSlaMonitor(user?: UserParams): Promise<SlaMonitorItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
+    return this.fetchList<SlaMonitorItemResponse>(
+      DASHBOARD_QUERIES.slaMonitor,
+      [filterUserId],
     );
   }
 
-  getEscalationAudit(): Promise<EscalationAuditItemResponse[]> {
+  getQualityIndicators(
+    user?: UserParams,
+  ): Promise<QualityIndicatorItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
+    return this.fetchList<QualityIndicatorItemResponse>(
+      DASHBOARD_QUERIES.qualityIndicators,
+      [filterUserId],
+    );
+  }
+
+  getEscalationAudit(user?: UserParams): Promise<EscalationAuditItemResponse[]> {
+    const filterUserId = DashboardUserPolicy.resolveScopeUserId(user);
     return this.fetchList<EscalationAuditItemResponse>(
       DASHBOARD_QUERIES.escalationAudit,
+      [filterUserId],
     );
   }
 }

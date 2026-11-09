@@ -23,46 +23,81 @@ import {
   WorkTypePerformanceItemResponse,
 } from '../schemas/dto/response/dashboard.response';
 
+export interface UserParams {
+  id?: string;
+  sub?: string;
+  role?: string | Record<string, unknown>;
+  roles?: Array<string | Record<string, unknown>>;
+  permissions?: number[];
+  user_type?: string;
+  username?: string;
+  email?: string;
+}
+
 export interface InterfaceIncidentOrderComparisonRepository {
-  getFunnelSummary(): Promise<FunnelSummaryResponse | null>;
-  getStateMatrix(): Promise<StateMatrixItemResponse[]>;
-  getOriginChannelBreakdown(): Promise<OriginChannelItemResponse[]>;
-  getCategoryDepartmentBreakdown(): Promise<CategoryDepartmentItemResponse[]>;
-  getSyncDiscrepancies(): Promise<SyncDiscrepancyItemResponse[]>;
-  getDispatchControl(limit: number): Promise<DispatchControlItemResponse[]>;
+  getFunnelSummary(user?: UserParams): Promise<FunnelSummaryResponse | null>;
+  getStateMatrix(user?: UserParams): Promise<StateMatrixItemResponse[]>;
+  getOriginChannelBreakdown(
+    user?: UserParams,
+  ): Promise<OriginChannelItemResponse[]>;
+  getCategoryDepartmentBreakdown(
+    user?: UserParams,
+  ): Promise<CategoryDepartmentItemResponse[]>;
+  getSyncDiscrepancies(
+    user?: UserParams,
+  ): Promise<SyncDiscrepancyItemResponse[]>;
+  getDispatchControl(
+    limit: number,
+    user?: UserParams,
+  ): Promise<DispatchControlItemResponse[]>;
 }
 
 export interface InterfaceExecutiveDashboardRepository {
-  getHeaderKpis(): Promise<HeaderKpisResponse | null>;
-  getStatusDistribution(): Promise<StatusDistributionItemResponse[]>;
-  getPriorityDistribution(): Promise<PriorityDistributionItemResponse[]>;
-  getWorkTypePerformance(): Promise<WorkTypePerformanceItemResponse[]>;
-  getKeyStatisticsMatrix(): Promise<KeyStatisticsMatrixItemResponse[]>;
-  getExecutiveOverview(): Promise<ExecutiveOverviewResponse | null>;
+  getHeaderKpis(user?: UserParams): Promise<HeaderKpisResponse | null>;
+  getStatusDistribution(
+    user?: UserParams,
+  ): Promise<StatusDistributionItemResponse[]>;
+  getPriorityDistribution(
+    user?: UserParams,
+  ): Promise<PriorityDistributionItemResponse[]>;
+  getWorkTypePerformance(
+    user?: UserParams,
+  ): Promise<WorkTypePerformanceItemResponse[]>;
+  getKeyStatisticsMatrix(
+    user?: UserParams,
+  ): Promise<KeyStatisticsMatrixItemResponse[]>;
+  getExecutiveOverview(
+    user?: UserParams,
+  ): Promise<ExecutiveOverviewResponse | null>;
 }
 
 export interface InterfaceTechnicianDashboardRepository {
-  getTechnicianPerformance(): Promise<TechnicianPerformanceItemResponse[]>;
+  getTechnicianPerformance(
+    user?: UserParams,
+  ): Promise<TechnicianPerformanceItemResponse[]>;
   getTechnicianDailyFeed(
     technicianId: string | null,
+    user?: UserParams,
   ): Promise<TechnicianDailyFeedItemResponse[]>;
-  getCrewAssignments(): Promise<CrewAssignmentItemResponse[]>;
+  getCrewAssignments(user?: UserParams): Promise<CrewAssignmentItemResponse[]>;
 }
 
 export interface InterfaceQualitySlaDashboardRepository {
-  getSlaMonitor(): Promise<SlaMonitorItemResponse[]>;
-  getQualityIndicators(): Promise<QualityIndicatorItemResponse[]>;
-  getEscalationAudit(): Promise<EscalationAuditItemResponse[]>;
+  getSlaMonitor(user?: UserParams): Promise<SlaMonitorItemResponse[]>;
+  getQualityIndicators(
+    user?: UserParams,
+  ): Promise<QualityIndicatorItemResponse[]>;
+  getEscalationAudit(user?: UserParams): Promise<EscalationAuditItemResponse[]>;
 }
 
 export interface InterfaceFinancialDashboardRepository {
-  getMaterialCosts(): Promise<MaterialCostItemResponse[]>;
-  getEconomicBalance(): Promise<EconomicBalanceItemResponse[]>;
+  getMaterialCosts(user?: UserParams): Promise<MaterialCostItemResponse[]>;
+  getEconomicBalance(user?: UserParams): Promise<EconomicBalanceItemResponse[]>;
 }
 
 export interface InterfaceTrendsDashboardRepository {
-  getDailyTrend(): Promise<DailyTrendItemResponse[]>;
-  getTerritorialConcentration(): Promise<
-    TerritorialConcentrationItemResponse[]
-  >;
+  getDailyTrend(user?: UserParams): Promise<DailyTrendItemResponse[]>;
+  getTerritorialConcentration(
+    user?: UserParams,
+  ): Promise<TerritorialConcentrationItemResponse[]>;
 }
