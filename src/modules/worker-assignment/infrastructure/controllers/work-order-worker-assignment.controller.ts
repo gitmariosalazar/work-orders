@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { WorkOrderWorkerAssignmentService } from '../../application/services/work-order-worker-assignment.service';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { CreateWorkOrderWorkerAssignmentRequest } from '../../domain/schemas/dto/request/create-work-order-worker-assignment.request';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Controller('work-order-worker-assignment')
 export class WorkOrderWorkerAssignmentController {
@@ -20,16 +21,42 @@ export class WorkOrderWorkerAssignmentController {
   }
 
   @MessagePattern('assignment-worker.find_worker_assignment_by_worker_id')
-  async findWorkerAssignmentByWorkerId(@Payload() workerId: number) {
+  async findWorkerAssignmentByWorkerId(
+    @Payload()
+    payload: number | string | { workerId: number | string; user?: UserParams },
+  ) {
+    const workerId =
+      typeof payload === 'object' && payload !== null && 'workerId' in payload
+        ? payload.workerId
+        : (payload as number | string);
+    const user =
+      typeof payload === 'object' && payload !== null && 'user' in payload
+        ? payload.user
+        : undefined;
+
     return this.workOrderWorkerAssignmentService.findWorkerAssignmentByWorkerId(
       workerId,
+      user,
     );
   }
 
   @MessagePattern('assignment-worker.find_worker_assignments_by_work_order_id')
-  async findWorkerAssignmentsByWorkOrderId(@Payload() workOrderId: string) {
+  async findWorkerAssignmentsByWorkOrderId(
+    @Payload()
+    payload: string | { workOrderId: string; user?: UserParams },
+  ) {
+    const workOrderId =
+      typeof payload === 'object' && payload !== null && 'workOrderId' in payload
+        ? payload.workOrderId
+        : (payload as string);
+    const user =
+      typeof payload === 'object' && payload !== null && 'user' in payload
+        ? payload.user
+        : undefined;
+
     return this.workOrderWorkerAssignmentService.findWorkerAssignmentsByWorkOrderId(
       workOrderId,
+      user,
     );
   }
 }

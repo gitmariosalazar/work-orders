@@ -11,6 +11,7 @@ import { WorkOrderHistoryModel } from '../../domain/schemas/models/work-order-hi
 import { WorkOrderHistoryMapper } from '../mappers/work-order-history.mapper';
 import { UpdateWorkOrderHistoryRequest } from '../../domain/schemas/dto/request/update.work-order-history.request';
 import { ViewWorkOrderHistoryResponse } from '../../domain/schemas/dto/response/view-work-order-history.response';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Injectable()
 export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase {
@@ -123,6 +124,7 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
 
   async getWorkOrderHistoryById(
     workOrderHistoryId: number,
+    user?: UserParams,
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
       if (!workOrderHistoryId || workOrderHistoryId <= 0) {
@@ -133,7 +135,7 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
       }
 
       const workOrderHistory =
-        await this.workOrderHistoryRepository.findById(workOrderHistoryId);
+        await this.workOrderHistoryRepository.findById(workOrderHistoryId, user);
 
       if (!workOrderHistory) {
         throw new RpcException({
@@ -150,6 +152,7 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
 
   async getWorkOrderHistoriesByWorkOrderId(
     workOrderId: string,
+    user?: UserParams,
   ): Promise<WorkOrderHistoryResponse[] | null> {
     try {
       if (!workOrderId || workOrderId.trim() === '') {
@@ -160,7 +163,7 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
       }
 
       const workOrderHistories =
-        await this.workOrderHistoryRepository.findByWorkOrderId(workOrderId);
+        await this.workOrderHistoryRepository.findByWorkOrderId(workOrderId, user);
 
       if (!workOrderHistories || workOrderHistories.length === 0) {
         throw new RpcException({
@@ -175,10 +178,10 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
     }
   }
 
-  async getAllWorkOrderHistories(): Promise<WorkOrderHistoryResponse[] | null> {
+  async getAllWorkOrderHistories(user?: UserParams): Promise<WorkOrderHistoryResponse[] | null> {
     try {
       const workOrderHistories =
-        await this.workOrderHistoryRepository.findAll();
+        await this.workOrderHistoryRepository.findAll(user);
 
       if (!workOrderHistories || workOrderHistories.length === 0) {
         throw new RpcException({
@@ -193,14 +196,18 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
     }
   }
 
-  async findAllViewHistoriesWorkOrders(pagination?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<ViewWorkOrderHistoryResponse[]> {
+  async findAllViewHistoriesWorkOrders(
+    pagination?: {
+      limit?: number;
+      offset?: number;
+    },
+    user?: UserParams,
+  ): Promise<ViewWorkOrderHistoryResponse[]> {
     try {
       const workOrderHistories =
         await this.workOrderHistoryRepository.findAllViewHistoriesWorkOrders(
           pagination,
+          user,
         );
 
       if (!workOrderHistories || workOrderHistories.length === 0) {
@@ -222,12 +229,14 @@ export class WorkOrderHistoryService implements InterfaceWorkOrderHistoryUseCase
       limit?: number;
       offset?: number;
     },
+    user?: UserParams,
   ): Promise<ViewWorkOrderHistoryResponse[]> {
     try {
       const workOrderHistories =
         await this.workOrderHistoryRepository.findAllViewHistoriesWorkOrdersByOrderCode(
           orderCode,
           pagination,
+          user,
         );
 
       if (!workOrderHistories || workOrderHistories.length === 0) {

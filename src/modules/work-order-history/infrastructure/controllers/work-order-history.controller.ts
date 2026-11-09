@@ -5,6 +5,7 @@ import { CreateWorkHistoryRequest } from '../../domain/schemas/dto/request/creea
 import { UpdateWorkOrderHistoryRequest } from '../../domain/schemas/dto/request/update.work-order-history.request';
 import { statusCode } from '../../../../settings/environments/status-code';
 import { ViewWorkOrderHistoryResponse } from '../../domain/schemas/dto/response/view-work-order-history.response';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Controller('work-orders-history')
 export class WorkOrderHistoryController {
@@ -32,30 +33,40 @@ export class WorkOrderHistoryController {
   }
 
   @MessagePattern('work-orders-histories.get-work-order-history-by-id')
-  async getWorkOrderHistoryById(workOrderHistoryId: number) {
-    return this.workOrderHistoryService.getWorkOrderHistoryById(
-      workOrderHistoryId,
-    );
+  async getWorkOrderHistoryById(
+    payload: number | { workOrderHistoryId: number; user?: UserParams },
+  ) {
+    const historyId =
+      typeof payload === 'number' ? payload : payload.workOrderHistoryId;
+    const user = typeof payload === 'object' ? payload.user : undefined;
+    return this.workOrderHistoryService.getWorkOrderHistoryById(historyId, user);
   }
 
   @MessagePattern(
     'work-orders-histories.get-work-order-histories-by-work-order-id',
   )
-  async getWorkOrderHistoriesByWorkOrderId(workOrderId: string) {
+  async getWorkOrderHistoriesByWorkOrderId(
+    payload: string | { workOrderId: string; user?: UserParams },
+  ) {
+    const workOrderId =
+      typeof payload === 'string' ? payload : payload.workOrderId;
+    const user = typeof payload === 'object' ? payload.user : undefined;
     return this.workOrderHistoryService.getWorkOrderHistoriesByWorkOrderId(
       workOrderId,
+      user,
     );
   }
 
   @MessagePattern('work-orders-histories.get-all-work-order-histories')
-  async getAllWorkOrderHistories() {
-    return this.workOrderHistoryService.getAllWorkOrderHistories();
+  async getAllWorkOrderHistories(payload?: { user?: UserParams }) {
+    return this.workOrderHistoryService.getAllWorkOrderHistories(payload?.user);
   }
 
   @MessagePattern('work-orders-histories.find-all-view-histories-work-orders')
   async findAllViewHistoriesWorkOrders(pagination?: {
     limit?: number;
     offset?: number;
+    user?: UserParams;
   }) {
     const safePagination = {
       limit: pagination?.limit ?? 100,
@@ -70,6 +81,7 @@ export class WorkOrderHistoryController {
     const response: ViewWorkOrderHistoryResponse[] =
       await this.workOrderHistoryService.findAllViewHistoriesWorkOrders(
         safePagination,
+        pagination?.user,
       );
     return response;
   }
@@ -80,8 +92,9 @@ export class WorkOrderHistoryController {
   async findAllViewHistoriesWorkOrdersByOrderCode(data: {
     orderCode: string;
     pagination?: { limit?: number; offset?: number };
+    user?: UserParams;
   }) {
-    const { orderCode, pagination } = data;
+    const { orderCode, pagination, user } = data;
 
     if (
       !orderCode ||
@@ -107,6 +120,7 @@ export class WorkOrderHistoryController {
     return await this.workOrderHistoryService.findAllViewHistoriesWorkOrdersByOrderCode(
       orderCode.trim(),
       safePagination,
+      user,
     );
   }
 }

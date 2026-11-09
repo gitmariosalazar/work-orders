@@ -1,5 +1,6 @@
 import { WorkOrderWorkerAssignmentResponse } from '../schemas/dto/response/work-order-worker-assignment.response';
 import { WorkOrderWorkerAssignmentModel } from '../schemas/models/work-order-worker-assignment.model';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 export interface InterfaceWorkOrderWorkerAssignmentRepository {
   addWorkerAssignmentToWorkOrderList(
@@ -7,8 +8,10 @@ export interface InterfaceWorkOrderWorkerAssignmentRepository {
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null>;
   findWorkerAssignmentsByWorkOrderId(
     workOrderId: string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null>;
   findWorkerAssignmentByWorkerId(
-    workerId: number,
+    workerId: number | string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse | null>;
 }

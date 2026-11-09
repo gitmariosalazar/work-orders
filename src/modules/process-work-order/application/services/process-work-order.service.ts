@@ -33,6 +33,7 @@ import {
   OrdenTrabajoVistaCliente,
   WorkOrderListItem,
 } from '../../domain/schemas/dto/response/work-orders.get.response';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Injectable()
 export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase {
@@ -743,6 +744,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
 
   async getOrdenTrabajoDetalleByNumeroOrden(
     numeroOrden: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoDetalle | null> {
     try {
       this.validateString(numeroOrden, 'numeroOrden');
@@ -750,6 +752,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
       const result =
         await this.processWorkOrderRepository.getOrdenTrabajoDetalleByNumeroOrden(
           numeroOrden,
+          user,
         );
       if (!result) {
         throw new RpcException({
@@ -766,6 +769,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
 
   async getOrdenesTrabajoBySolicitudId(
     solicitudId: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoVistaCliente[]> {
     try {
       this.validateString(solicitudId, 'solicitudId');
@@ -773,6 +777,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
       const result =
         await this.processWorkOrderRepository.getOrdenesTrabajoBySolicitudId(
           solicitudId,
+          user,
         );
       return result ?? [];
     } catch (error) {
@@ -782,6 +787,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
 
   async getOrdenTrabajoTrackingByNumeroOrden(
     searchValue: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoTracking[]> {
     try {
       this.validateString(searchValue, 'searchValue');
@@ -789,6 +795,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
       const result =
         await this.processWorkOrderRepository.getOrdenTrabajoTrackingByNumeroOrden(
           searchValue,
+          user,
         );
       if (!result || result.length === 0) {
         throw new RpcException({
@@ -807,6 +814,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
     searchValue?: string,
     limit?: number,
     offset?: number,
+    user?: UserParams,
   ): Promise<WorkOrderListItem[]> {
     try {
       // limit > 0 (cuántos traer)
@@ -827,6 +835,7 @@ export class ProcessWorkOrderService implements InterfaceProcessWorkOrderUseCase
         searchValue,
         limit,
         offset,
+        user,
       );
 
       return result ?? [];

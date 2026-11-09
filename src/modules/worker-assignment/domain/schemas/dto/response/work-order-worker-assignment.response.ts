@@ -1,7 +1,7 @@
 export interface WorkOrderWorkerAssignmentResponse {
-  assignmentId: number;
+  assignmentId: number | string;
   workOrderId: string;
-  workerId: number;
+  workerId: number | string;
   rolId: number;
   assignedDate: Date;
 }

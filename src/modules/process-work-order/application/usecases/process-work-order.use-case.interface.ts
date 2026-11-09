@@ -27,6 +27,7 @@ import {
   OrdenTrabajoVistaCliente,
   WorkOrderListItem,
 } from '../../domain/schemas/dto/response/work-orders.get.response';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 export interface InterfaceProcessWorkOrderUseCase {
   createWorkOrder(
@@ -117,16 +118,19 @@ export interface InterfaceProcessWorkOrderUseCase {
   /** Detalle completo de una OT — panel administrativo */
   getOrdenTrabajoDetalleByNumeroOrden(
     numeroOrden: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoDetalle | null>;
 
   /** Timeline y métricas de SLA de una OT — monitoreo interno */
   getOrdenTrabajoTrackingByNumeroOrden(
     searchValue: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoTracking[]>;
 
   /** OTs vinculadas a un trámite — portal del cliente */
   getOrdenesTrabajoBySolicitudId(
     solicitudId: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoVistaCliente[]>;
 
   /** Listado completo de OTs con paginación — panel administrativo */
@@ -134,5 +138,6 @@ export interface InterfaceProcessWorkOrderUseCase {
     searchValue?: string,
     limit?: number,
     offset?: number,
+    user?: UserParams,
   ): Promise<WorkOrderListItem[]>;
 }

@@ -45,6 +45,10 @@ import {
 } from '../../../interfaces/sql/work-orders.sql.response';
 import { ProcessWorkOrderAdapter } from '../adapters/postgresql.process-work-order.adapter';
 import { toNull } from '../../../../../../shared/validators/to-null';
+import {
+  WorkOrderUserPolicy,
+  UserParams,
+} from '../../../../../../shared/policies/work-order-user.policy';
 
 type OrderSnapshot = {
   work_order_id: string;
@@ -1678,7 +1682,9 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
   async getOrdenTrabajoDetalleByNumeroOrden(
     numeroOrden: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoDetalle | null> {
+    const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
     const query: string = /*sql*/ `
         SELECT
             -- ── Identificación ────────────────────────────────────────────────────────
@@ -2011,6 +2017,16 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           ot.codigo_orden        = $1
         )
           AND ot.is_deleted = FALSE
+          AND (
+            $2::text IS NULL
+            OR ot.usuario_asignado::text = $2::text
+            OR EXISTS (
+              SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+              WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+                AND ato.id_trabajador::text = $2::text
+                AND ato.is_deleted = FALSE
+            )
+          )
 
         GROUP BY
             ot.id_orden_trabajo,
@@ -2035,6 +2051,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     const result =
       await this.databaseService.query<OrdenTrabajoDetalleSqlResult>(query, [
         numeroOrden,
+        filterUserId,
       ]);
 
     if (!result || result.length === 0) {
@@ -2050,8 +2067,10 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
   async getOrdenTrabajoTrackingByNumeroOrden(
     searchValue: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoTracking[]> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query: string = `
       SELECT
           -- ── Identificación ────────────────────────────────────────────────────────
@@ -2203,12 +2222,23 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
           OR ot.clave_catastral = $1
       )
         AND ot.is_deleted = FALSE
+        AND (
+          $2::text IS NULL
+          OR ot.usuario_asignado::text = $2::text
+          OR EXISTS (
+            SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+            WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+              AND ato.id_trabajador::text = $2::text
+              AND ato.is_deleted = FALSE
+          )
+        )
 
       ORDER BY ot.fecha_creacion DESC;
       `;
       const result =
         await this.databaseService.query<OrdenTrabajoTrackingSqlResult>(query, [
           searchValue,
+          filterUserId,
         ]);
 
       if (result.length === 0) {
@@ -2231,7 +2261,9 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
   async getOrdenesTrabajoBySolicitudId(
     solicitudId: string,
+    user?: UserParams,
   ): Promise<OrdenTrabajoVistaCliente[]> {
+    const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
     const query: string = `
       SELECT
           -- ── Identificación de la OT ───────────────────────────────────────────────
@@ -2390,13 +2422,23 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
       WHERE sot.id_solicitud::text = $1
         AND ot.is_deleted    = FALSE
+        AND (
+          $2::text IS NULL
+          OR ot.usuario_asignado::text = $2::text
+          OR EXISTS (
+            SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+            WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+              AND ato.id_trabajador::text = $2::text
+              AND ato.is_deleted = FALSE
+          )
+        )
 
       ORDER BY ot.fecha_creacion ASC;
       `;
     const result =
       await this.databaseService.query<OrdenTrabajoVistaClienteSqlResult>(
         query,
-        [solicitudId],
+        [solicitudId, filterUserId],
       );
     const response = result.map((row) =>
       ProcessWorkOrderAdapter.fromOrdenTrabajoVistaClienteSqlResultToOrdenTrabajoVistaCliente(
@@ -2410,7 +2452,9 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
     searchValue?: string,
     limit?: number,
     offset?: number,
+    user?: UserParams,
   ): Promise<WorkOrderListItem[]> {
+    const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
     const term = searchValue?.trim() ? `%${searchValue.trim()}%` : null;
 
     const query: string = `
@@ -2466,11 +2510,21 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         OR ot.id_cliente::TEXT ILIKE $1::text
         OR ot.clave_catastral ILIKE $1::text
       )
+      AND (
+        $4::text IS NULL
+        OR ot.usuario_asignado::text = $4::text
+        OR EXISTS (
+          SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+          WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+            AND ato.id_trabajador::text = $4::text
+            AND ato.is_deleted = FALSE
+        )
+      )
       ORDER  BY ot.fecha_creacion DESC
       LIMIT  COALESCE($2::int, 100)
       OFFSET COALESCE($3::int, 0);
       `;
-    const values = [term, toNull(limit), toNull(offset)];
+    const values = [term, toNull(limit), toNull(offset), filterUserId];
 
     const result = await this.databaseService.query<WorkOrderListItemSqlResult>(
       query,

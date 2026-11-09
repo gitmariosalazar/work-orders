@@ -7,6 +7,7 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../settings/environments/status-code';
 import { WorkOrderWorkerAssignmentMapper } from '../mappers/work-order-worker-assignment.mapper';
 import { WorkOrderWorkerAssignmentModel } from '../../domain/schemas/models/work-order-worker-assignment.model';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Injectable()
 export class WorkOrderWorkerAssignmentService
@@ -52,10 +53,15 @@ export class WorkOrderWorkerAssignmentService
   }
 
   async findWorkerAssignmentByWorkerId(
-    workerId: number,
+    workerId: number | string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse | null> {
     try {
-      if (!workerId || workerId <= 0) {
+      if (
+        workerId === undefined ||
+        workerId === null ||
+        String(workerId).trim() === ''
+      ) {
         throw new RpcException({
           statusCode: statusCode.BAD_REQUEST,
           message: 'Invalid worker ID',
@@ -65,6 +71,7 @@ export class WorkOrderWorkerAssignmentService
       const result =
         await this.workOrderWorkerAssignmentRepository.findWorkerAssignmentByWorkerId(
           workerId,
+          user,
         );
 
       if (!result) {
@@ -82,6 +89,7 @@ export class WorkOrderWorkerAssignmentService
 
   async findWorkerAssignmentsByWorkOrderId(
     workOrderId: string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null> {
     try {
       if (!workOrderId || workOrderId.trim() === '') {
@@ -94,6 +102,7 @@ export class WorkOrderWorkerAssignmentService
       const result =
         await this.workOrderWorkerAssignmentRepository.findWorkerAssignmentsByWorkOrderId(
           workOrderId,
+          user,
         );
 
       if (!result || result.length === 0) {

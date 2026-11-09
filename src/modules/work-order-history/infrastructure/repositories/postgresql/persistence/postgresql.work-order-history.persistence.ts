@@ -12,6 +12,10 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { ViewWorkOrderHistoryResponse } from '../../../../domain/schemas/dto/response/view-work-order-history.response';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
+import {
+  WorkOrderUserPolicy,
+  UserParams,
+} from '../../../../../../shared/policies/work-order-user.policy';
 
 @Injectable()
 export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrderHistoryRepository {
@@ -151,8 +155,10 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
 
   async findById(
     workOrderHistoryId: number,
+    user?: UserParams,
   ): Promise<WorkOrderHistoryResponse | null> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query: string = `
         SELECT
           hist.id_historial AS work_order_history_id,
@@ -165,10 +171,20 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
           ot.codigo_orden AS order_code
         FROM work_orders.historial_estado_orden_trabajo hist
         LEFT JOIN work_orders.orden_trabajo ot ON ot.id_orden_trabajo = hist.id_orden_trabajo
-        WHERE hist.id_historial = $1;
+        WHERE hist.id_historial = $1
+          AND (
+            $2::text IS NULL
+            OR ot.usuario_asignado::text = $2::text
+            OR EXISTS (
+              SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+              WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+                AND ato.id_trabajador::text = $2::text
+                AND ato.is_deleted = FALSE
+            )
+          );
       `;
 
-      const params = [workOrderHistoryId];
+      const params = [workOrderHistoryId, filterUserId];
 
       const result =
         await this.databaseService.query<WorkOrderHistorySQLResponse>(
@@ -190,8 +206,10 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
 
   async findByWorkOrderId(
     workOrderId: string,
+    user?: UserParams,
   ): Promise<WorkOrderHistoryResponse[] | null> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query: string = `
         SELECT
           hist.id_historial AS work_order_history_id,
@@ -204,11 +222,21 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
           ot.codigo_orden AS order_code
         FROM work_orders.historial_estado_orden_trabajo hist
         LEFT JOIN work_orders.orden_trabajo ot ON ot.id_orden_trabajo = hist.id_orden_trabajo
-        WHERE hist.id_orden_trabajo = $1
+        WHERE hist.id_orden_trabajo::text = $1::text
+          AND (
+            $2::text IS NULL
+            OR ot.usuario_asignado::text = $2::text
+            OR EXISTS (
+              SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+              WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+                AND ato.id_trabajador::text = $2::text
+                AND ato.is_deleted = FALSE
+            )
+          )
         ORDER BY hist.fecha_cambio DESC, hist.id_historial DESC;
       `;
 
-      const params = [workOrderId];
+      const params = [workOrderId, filterUserId];
 
       const result =
         await this.databaseService.query<WorkOrderHistorySQLResponse>(
@@ -226,8 +254,9 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
     }
   }
 
-  async findAll(): Promise<WorkOrderHistoryResponse[] | null> {
+  async findAll(user?: UserParams): Promise<WorkOrderHistoryResponse[] | null> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query: string = `
         SELECT
           hist.id_historial AS work_order_history_id,
@@ -240,11 +269,23 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
           ot.codigo_orden AS order_code
         FROM work_orders.historial_estado_orden_trabajo hist
         LEFT JOIN work_orders.orden_trabajo ot ON ot.id_orden_trabajo = hist.id_orden_trabajo
+        WHERE (
+          $1::text IS NULL
+          OR ot.usuario_asignado::text = $1::text
+          OR EXISTS (
+            SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+            WHERE ato.id_orden_trabajo = ot.id_orden_trabajo
+              AND ato.id_trabajador::text = $1::text
+              AND ato.is_deleted = FALSE
+          )
+        )
         ORDER BY hist.fecha_cambio DESC, hist.id_historial DESC;
       `;
 
       const result =
-        await this.databaseService.query<WorkOrderHistorySQLResponse>(query);
+        await this.databaseService.query<WorkOrderHistorySQLResponse>(query, [
+          filterUserId,
+        ]);
 
       return result.map((sqlResponse) =>
         WorkOrderHistoryAdapter.fromWorkOrderHistorySQLResponseToWorkOrderHistoryResponse(
@@ -256,11 +297,15 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
     }
   }
 
-  async findAllViewHistoriesWorkOrders(pagination?: {
-    limit?: number;
-    offset?: number;
-  }): Promise<ViewWorkOrderHistoryResponse[]> {
+  async findAllViewHistoriesWorkOrders(
+    pagination?: {
+      limit?: number;
+      offset?: number;
+    },
+    user?: UserParams,
+  ): Promise<ViewWorkOrderHistoryResponse[]> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query = `
         SELECT
           dash.id_orden_trabajo AS work_order_id,
@@ -295,12 +340,26 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
         FROM work_orders.historial_estado_orden_trabajo hist
         JOIN work_orders.orden_trabajo dash ON dash.id_orden_trabajo = hist.id_orden_trabajo
         LEFT JOIN work_orders.cat_estado_orden ceo ON ceo.codigo = hist.estado_nuevo
+        WHERE (
+          $3::text IS NULL
+          OR dash.usuario_asignado::text = $3::text
+          OR EXISTS (
+            SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+            WHERE ato.id_orden_trabajo = dash.id_orden_trabajo
+              AND ato.id_trabajador::text = $3::text
+              AND ato.is_deleted = FALSE
+          )
+        )
         ORDER BY hist.fecha_cambio DESC, dash.id_orden_trabajo DESC
         LIMIT COALESCE($1::int, 100)
         OFFSET COALESCE($2::int, 0);
       `;
 
-      const params = [pagination?.limit ?? null, pagination?.offset ?? null];
+      const params = [
+        pagination?.limit ?? null,
+        pagination?.offset ?? null,
+        filterUserId,
+      ];
 
       const result =
         await this.databaseService.query<ViewWorkOrderHistorySqlResponse>(
@@ -320,8 +379,10 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
   async findAllViewHistoriesWorkOrdersByOrderCode(
     orderCode: string,
     pagination?: { limit?: number; offset?: number },
+    user?: UserParams,
   ): Promise<ViewWorkOrderHistoryResponse[]> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query = `
         SELECT
           dash.id_orden_trabajo AS work_order_id,
@@ -357,6 +418,16 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
         JOIN work_orders.orden_trabajo dash ON dash.id_orden_trabajo = hist.id_orden_trabajo
         LEFT JOIN work_orders.cat_estado_orden ceo ON ceo.codigo = hist.estado_nuevo
         WHERE dash.codigo_orden = $1
+          AND (
+            $4::text IS NULL
+            OR dash.usuario_asignado::text = $4::text
+            OR EXISTS (
+              SELECT 1 FROM work_orders.asignacion_trabajador_orden ato
+              WHERE ato.id_orden_trabajo = dash.id_orden_trabajo
+                AND ato.id_trabajador::text = $4::text
+                AND ato.is_deleted = FALSE
+            )
+          )
         ORDER BY hist.fecha_cambio DESC, dash.id_orden_trabajo DESC
         LIMIT COALESCE($2::int, 100)
         OFFSET COALESCE($3::int, 0);
@@ -366,6 +437,7 @@ export class PostgresqlWorkOrderHistoryPersistence implements InterfaceWorkOrder
         orderCode,
         pagination?.limit ?? null,
         pagination?.offset ?? null,
+        filterUserId,
       ];
 
       const result =

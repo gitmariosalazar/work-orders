@@ -7,6 +7,10 @@ import { RpcException } from '@nestjs/microservices';
 import { statusCode } from '../../../../../../settings/environments/status-code';
 import { WorkOrderWorkerAssignmentAdapter } from '../adapters/postgresql.work-order-worker-assignment.adapters';
 import { DatabaseAbstract } from '../../../../../../shared/connections/database/abstract/abstract.database';
+import {
+  WorkOrderUserPolicy,
+  UserParams,
+} from '../../../../../../shared/policies/work-order-user.policy';
 
 @Injectable()
 export class PostgresqlWorkOrderWorkerAssignmentPersistence implements InterfaceWorkOrderWorkerAssignmentRepository {
@@ -77,22 +81,29 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence implements Interface
   }
 
   async findWorkerAssignmentByWorkerId(
-    workerId: number,
+    workerId: number | string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse | null> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query = `
         SELECT
-          id_asignacion AS assignment_id,
-          id_orden_trabajo AS work_order_id,
-          id_trabajador AS worker_id,
-          id_rol AS rol_id,
-          fecha_asignacion AS assigned_date
-        FROM work_orders.asignacion_orden_trabajo_trabajador
-        WHERE id_trabajador = $1
-        ORDER BY fecha_asignacion DESC, id_asignacion DESC
+          ato.id_asignacion AS assignment_id,
+          ato.id_orden_trabajo AS work_order_id,
+          ato.id_trabajador AS worker_id,
+          COALESCE(ato.id_rol, 0) AS rol_id,
+          ato.fecha_asignacion AS assigned_date
+        FROM work_orders.asignacion_trabajador_orden ato
+        WHERE ato.id_trabajador::text = $1::text
+          AND ato.is_deleted = FALSE
+          AND (
+            $2::text IS NULL
+            OR ato.id_trabajador::text = $2::text
+          )
+        ORDER BY ato.fecha_asignacion DESC, ato.id_asignacion DESC
         LIMIT 1;
       `;
-      const values = [workerId];
+      const values = [String(workerId).trim(), filterUserId];
 
       const result: WorkOrderWorkerAssignmentSqlResponse[] =
         await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(
@@ -114,20 +125,35 @@ export class PostgresqlWorkOrderWorkerAssignmentPersistence implements Interface
 
   async findWorkerAssignmentsByWorkOrderId(
     workOrderId: string,
+    user?: UserParams,
   ): Promise<WorkOrderWorkerAssignmentResponse[] | null> {
     try {
+      const filterUserId = WorkOrderUserPolicy.resolveScopeUserId(user);
       const query = `
         SELECT
-          id_asignacion AS assignment_id,
-          id_orden_trabajo AS work_order_id,
-          id_trabajador AS worker_id,
-          id_rol AS rol_id,
-          fecha_asignacion AS assigned_date
-        FROM work_orders.asignacion_orden_trabajo_trabajador
-        WHERE id_orden_trabajo = $1
-        ORDER BY fecha_asignacion DESC, id_asignacion DESC;
+          ato.id_asignacion AS assignment_id,
+          ato.id_orden_trabajo AS work_order_id,
+          ato.id_trabajador AS worker_id,
+          COALESCE(ato.id_rol, 0) AS rol_id,
+          ato.fecha_asignacion AS assigned_date
+        FROM work_orders.asignacion_trabajador_orden ato
+        JOIN work_orders.orden_trabajo ot ON ot.id_orden_trabajo = ato.id_orden_trabajo
+        WHERE ato.id_orden_trabajo::text = $1::text
+          AND ato.is_deleted = FALSE
+          AND ot.is_deleted = FALSE
+          AND (
+            $2::text IS NULL
+            OR ot.usuario_asignado::text = $2::text
+            OR EXISTS (
+              SELECT 1 FROM work_orders.asignacion_trabajador_orden sub_ato
+              WHERE sub_ato.id_orden_trabajo = ot.id_orden_trabajo
+                AND sub_ato.id_trabajador::text = $2::text
+                AND sub_ato.is_deleted = FALSE
+            )
+          )
+        ORDER BY ato.fecha_asignacion DESC, ato.id_asignacion DESC;
       `;
-      const values = [workOrderId];
+      const values = [workOrderId.trim(), filterUserId];
 
       const results: WorkOrderWorkerAssignmentSqlResponse[] =
         await this.databaseService.query<WorkOrderWorkerAssignmentSqlResponse>(

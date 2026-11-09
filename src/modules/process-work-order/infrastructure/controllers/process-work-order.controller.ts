@@ -20,6 +20,7 @@ import {
   RegisterSatisfactionSurveyCommand,
   RemoveWorkerFromWorkOrderCommand,
 } from '../../domain/schemas/dto/process-work-order.commands';
+import { UserParams } from '../../../../shared/policies/work-order-user.policy';
 
 @Controller('process-work-orders')
 export class ProcessWorkOrderController {
@@ -213,23 +214,35 @@ export class ProcessWorkOrderController {
   }
 
   @MessagePattern('work-orders.process-work-order.get-detalle-by-numero-orden')
-  async getOrdenTrabajoDetalleByNumeroOrden(payload: { numeroOrden: string }) {
+  async getOrdenTrabajoDetalleByNumeroOrden(payload: {
+    numeroOrden: string;
+    user?: UserParams;
+  }) {
     return this.processWorkOrderService.getOrdenTrabajoDetalleByNumeroOrden(
       payload.numeroOrden,
+      payload.user,
     );
   }
 
   @MessagePattern('work-orders.process-work-order.get-tracking-by-numero-orden')
-  async getOrdenTrabajoTrackingByNumeroOrden(payload: { searchValue: string }) {
+  async getOrdenTrabajoTrackingByNumeroOrden(payload: {
+    searchValue: string;
+    user?: UserParams;
+  }) {
     return this.processWorkOrderService.getOrdenTrabajoTrackingByNumeroOrden(
       payload.searchValue,
+      payload.user,
     );
   }
 
   @MessagePattern('work-orders.process-work-order.get-ordenes-by-solicitud-id')
-  async getOrdenesTrabajoBySolicitudId(payload: { solicitudId: string }) {
+  async getOrdenesTrabajoBySolicitudId(payload: {
+    solicitudId: string;
+    user?: UserParams;
+  }) {
     return this.processWorkOrderService.getOrdenesTrabajoBySolicitudId(
       payload.solicitudId,
+      payload.user,
     );
   }
 
@@ -238,12 +251,14 @@ export class ProcessWorkOrderController {
     searchValue?: string;
     limit?: number;
     offset?: number;
+    user?: UserParams;
   }) {
-    const { searchValue, limit, offset } = payload;
+    const { searchValue, limit, offset, user } = payload;
     return this.processWorkOrderService.getAllWorkOrders(
       searchValue,
       limit,
       offset,
+      user,
     );
   }
 }
