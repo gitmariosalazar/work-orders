@@ -2462,7 +2462,7 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
       SELECT
         ot.id_orden_trabajo::TEXT                       AS work_order_id,
         ot.codigo_orden                                 AS order_code,
-        ot.origen,
+        ot.origen                                       AS origin,
         ot.id_tipo_trabajo                              AS work_type_id,   -- ✅ alias ot.
         tt.nombre                                       AS work_type_name,
         ot.id_prioridad                                 AS priority_id,
@@ -2487,8 +2487,12 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
         ot.descripcion                                  AS description,
         ot.direccion                                    AS location,
         ot.created_by::TEXT                             AS created_user_id,
-        ot.usuario_asignacion::TEXT                     AS assigned_user_id,
+        ot.usuario_asignado::TEXT                       AS assigned_user_id,
+        empl.ciudadano_id::TEXT                         AS assigned_username,
+        empl.nombres || ' ' || empl.apellidos           AS assigned_names,
         ot.usuario_completacion::TEXT                   AS completed_user_id,
+        empl_comp.ciudadano_id::TEXT                    AS completed_username,
+        empl_comp.nombres || ' ' || empl_comp.apellidos AS completed_names,
         public.ST_AsText(ot.geom_punto)                 AS coordinates,
         ot.metadata::TEXT                               AS metadata,
         ot.clave_catastral                              AS cadastral_key,
@@ -2498,6 +2502,8 @@ export class PostgresqlProcessWorkOrderPersistence implements InterfaceProcessWo
 
       FROM work_orders.orden_trabajo ot                          -- ✅ alias ot
       INNER JOIN work_orders.tipo_trabajo tt ON tt.id_tipo_trabajo = ot.id_tipo_trabajo
+      LEFT JOIN empleados empl ON empl.usuario_id = ot.usuario_asignado
+      LEFT JOIN empleados empl_comp ON empl_comp.usuario_id = ot.usuario_completacion
       LEFT  JOIN public.cliente        c    ON c.cliente_id        = ot.id_cliente
       LEFT  JOIN public.ciudadano      ciud ON ciud.ciudadano_id   = c.cliente_id
       LEFT  JOIN public.empresa        emp  ON emp.cliente_id      = c.cliente_id

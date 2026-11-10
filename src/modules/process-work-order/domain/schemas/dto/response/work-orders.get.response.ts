@@ -385,7 +385,11 @@ export interface WorkOrderListItem {
   coordinates: string | null;
   createdUserId: string;
   assignedUserId: string | null;
+  assignedUsername: string | null;
+  assignedNames: string | null;
   completedUserId: string | null;
+  completedUsername: string | null;
+  completedNames: string | null;
   metadata: string | null;
   isDeleted: boolean;
   departmentId?: number;

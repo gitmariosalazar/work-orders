@@ -403,7 +403,11 @@ export interface WorkOrderListItemSqlResult {
 
   created_user_id: string;
   assigned_user_id: string | null;
+  assigned_username: string | null;
+  assigned_names: string | null;
   completed_user_id: string | null;
+  completed_username: string | null;
+  completed_names: string | null;
 
   /** JSON serializado como TEXT en la BD */
   metadata: string | null;
